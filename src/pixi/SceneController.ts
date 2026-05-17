@@ -1,5 +1,4 @@
 import { Application, Ticker } from 'pixi.js';
-import { Live2DModel } from 'pixi-live2d-display/cubism4';
 import { ParticleSystem } from './ParticleSystem';
 import { WeatherEffects } from './WeatherEffects';
 import type { Emotion } from '../types';
@@ -10,23 +9,23 @@ if (!(window as any).PIXI) {
   (window as any).PIXI = { Ticker };
 }
 
-let cubismLoaded = false;
+let Live2DModel: any = null;
 
 async function ensureCubismCore(): Promise<void> {
-  if (cubismLoaded || (window as any).Live2DCubismCore) {
-    cubismLoaded = true;
-    return;
+  if (Live2DModel) return;
+
+  if (!(window as any).Live2DCubismCore) {
+    await new Promise<void>((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = `${import.meta.env.BASE_URL}live2d/live2dcubismcore.min.js`;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Failed to load Cubism Core SDK'));
+      document.head.appendChild(script);
+    });
   }
-  return new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = `${import.meta.env.BASE_URL}live2d/live2dcubismcore.min.js`;
-    script.onload = () => {
-      cubismLoaded = true;
-      resolve();
-    };
-    script.onerror = () => reject(new Error('Failed to load Cubism Core SDK'));
-    document.head.appendChild(script);
-  });
+
+  const mod = await import('pixi-live2d-display/cubism4');
+  Live2DModel = mod.Live2DModel;
 }
 
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
@@ -117,7 +116,7 @@ export class SceneController {
   private particles: ParticleSystem;
   private weather: WeatherEffects;
   private currentEmotion: Emotion = 'calm';
-  private model: Live2DModel | null = null;
+  private model: any | null = null;
   private modelLoaded: boolean = false;
   private mouseX: number = 0;
   private mouseY: number = 0;
