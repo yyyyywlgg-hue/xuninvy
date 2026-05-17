@@ -10,6 +10,25 @@ if (!(window as any).PIXI) {
   (window as any).PIXI = { Ticker };
 }
 
+let cubismLoaded = false;
+
+async function ensureCubismCore(): Promise<void> {
+  if (cubismLoaded || (window as any).Live2DCubismCore) {
+    cubismLoaded = true;
+    return;
+  }
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = `${import.meta.env.BASE_URL}live2d/live2dcubismcore.min.js`;
+    script.onload = () => {
+      cubismLoaded = true;
+      resolve();
+    };
+    script.onerror = () => reject(new Error('Failed to load Cubism Core SDK'));
+    document.head.appendChild(script);
+  });
+}
+
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 const easeOutQuad = (t: number) => 1 - (1 - t) * (1 - t);
 const easeInQuad = (t: number) => t * t;
@@ -136,6 +155,7 @@ export class SceneController {
 
   async loadLive2DModel(modelUrl: string, cleanup?: (() => void) | null): Promise<boolean> {
     try {
+      await ensureCubismCore();
       this.unloadModel();
       if (cleanup) this.currentCleanup = cleanup;
 
