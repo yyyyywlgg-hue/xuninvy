@@ -1,58 +1,44 @@
-interface CyberRadioProps {
-  name: string
-  options: { value: string; label: string; number?: string }[]
-  value: string
-  onChange: (value: string) => void
-}
-
-export function CyberRadio({ name, options, value, onChange }: CyberRadioProps) {
-  return (
-    <div className="flex gap-1.5">
-      {options.map((opt) => (
-        <div key={opt.value} className="cyber-radio-wrapper">
-          <input
-            type="radio"
-            name={name}
-            value={opt.value}
-            checked={value === opt.value}
-            onChange={() => onChange(opt.value)}
-            className="cyber-input"
-          />
-          <div className="cyber-btn">
-            {opt.number && <span className="cyber-number">{opt.number}</span>}
-            {opt.label}
-            <div className="cyber-btn__glitch" aria-hidden="true">
-              {opt.label}
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-interface CyberChipProps {
+interface TabRadioProps {
   name: string
   options: { value: string; label: string }[]
   value: string
   onChange: (value: string) => void
 }
 
-export function CyberChipGroup({ name, options, value, onChange }: CyberChipProps) {
+export function CyberRadio({ name, options, value, onChange }: TabRadioProps) {
   return (
-    <div className="flex flex-wrap gap-0.5">
+    <div className="flex gap-1 p-1 bg-[var(--bg-glass)] rounded-[var(--radius-md)] border border-[var(--border-soft)]">
       {options.map((opt) => (
-        <div key={opt.value} className="cyber-chip-wrapper">
-          <input
-            type="radio"
-            name={name}
-            value={opt.value}
-            checked={value === opt.value}
-            onChange={() => onChange(opt.value)}
-            className="cyber-input"
-          />
-          <div className="cyber-chip">{opt.label}</div>
-        </div>
+        <button
+          key={opt.value}
+          onClick={() => onChange(opt.value)}
+          className={`tab-btn flex-1 ${value === opt.value ? 'active' : ''}`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+interface ChipGroupProps {
+  name: string
+  options: { value: string; label: string }[]
+  value: string
+  onChange: (value: string) => void
+}
+
+export function CyberChipGroup({ name, options, value, onChange }: ChipGroupProps) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          onClick={() => onChange(opt.value)}
+          className={`preset-chip ${value === opt.value ? 'active' : ''}`}
+        >
+          {opt.label}
+        </button>
       ))}
     </div>
   )

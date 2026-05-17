@@ -29,7 +29,7 @@ export default function PerfMonitor() {
   }, []);
 
   return (
-    <div className="font-mono text-[9px] leading-relaxed text-[var(--text-muted)] bg-[var(--bg-glass)] px-2.5 py-1 border border-[var(--border-soft)] rounded-lg">
+    <div className="font-mono text-[9px] leading-relaxed text-[var(--cyber-cyan)]/50 bg-[var(--cyber-surface)] px-2 py-1 border border-[var(--cyber-border)]" style={{ clipPath: 'polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 4px 100%, 0 calc(100% - 4px))' }}>
       <div>{fps} FPS</div>
       {memory > 0 && <div>{memory}MB</div>}
     </div>

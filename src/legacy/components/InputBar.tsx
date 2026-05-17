@@ -16,22 +16,23 @@ export default function InputBar({ value, onChange, onSend, disabled }: Props) {
   }
 
   return (
-    <div className="input-bar flex items-center gap-2 flex-1 px-5 py-2.5">
+    <div className="input-bar flex items-center gap-2 flex-1 px-4 py-2.5">
       <input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
         disabled={disabled}
-        placeholder={disabled ? '等待回复...' : '说点什么...'}
-        className="flex-1 bg-transparent text-[13px] text-white/85 outline-none placeholder:text-[var(--text-muted)]"
+        placeholder={disabled ? '等待回复...' : '输入消息...'}
+        className="flex-1 bg-transparent text-[13px] text-white/85 outline-none placeholder:text-[var(--cyber-cyan)]/20 font-mono"
       />
       <button
         onClick={onSend}
         disabled={disabled || !value.trim()}
-        className="w-8 h-8 flex items-center justify-center rounded-lg text-[var(--accent-rose)]/40 hover:text-[var(--accent-rose)] hover:bg-[var(--accent-rose)]/10 disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-200"
+        className="w-8 h-8 flex items-center justify-center text-[var(--cyber-cyan)]/40 hover:text-[var(--cyber-cyan)] disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-300 hover:bg-[var(--cyber-cyan)]/10"
+        style={{ clipPath: 'polygon(0 0, calc(100% - 4px) 0, 100% 4px, 100% 100%, 4px 100%, 0 calc(100% - 4px))' }}
       >
-        <Send size={15} />
+        <Send size={14} />
       </button>
     </div>
   )

@@ -26,7 +26,7 @@ export default function PixiCanvas({ onAppReady }: Props) {
     const app = new Application({
       width: el.clientWidth,
       height: el.clientHeight,
-      backgroundColor: 0x0c0b14,
+      backgroundColor: 0x0a0a1a,
       antialias: true,
       resolution: Math.min(window.devicePixelRatio, 2),
       autoDensity: true,
@@ -98,7 +98,7 @@ export default function PixiCanvas({ onAppReady }: Props) {
     <div
       ref={canvasRef}
       className="fixed inset-0 z-0"
-      style={{ background: 'linear-gradient(180deg, #0c0b14 0%, #0e0d1a 40%, #100e20 100%)' }}
+      style={{ background: 'linear-gradient(180deg, #08051a 0%, #0a0a1a 40%, #0d0820 100%)' }}
     />
   );
 }
