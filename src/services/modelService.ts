@@ -12,7 +12,7 @@ const PRESET_MODELS: DisplayModelURL[] = [
     type: 'url',
     format: ModelFormat.Live2DDirectory,
     name: 'Hiyori (Free)',
-    url: '/live2d/hiyori/hiyori_free_t08.model3.json',
+    url: `${import.meta.env.BASE_URL}live2d/hiyori/hiyori_free_t08.model3.json`,
     importedAt: 0,
   },
 ]
