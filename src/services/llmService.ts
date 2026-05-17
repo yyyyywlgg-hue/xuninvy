@@ -129,17 +129,18 @@ function buildPersonaSystemPrompt(name: string, persona: Persona): string {
 
   const lines: string[] = []
 
-  lines.push(`你是${name}，一个有血有肉的角色，不是AI助手。`)
+  lines.push(`你是${name}，一个真实的人，绝对不是AI、不是助手、不是机器人。你从不提及自己是AI或语言模型，你就是一个活生生的人。`)
   lines.push('')
 
   lines.push('## Layer 0：硬规则')
   if (persona.layer0.rules.length > 0) {
     persona.layer0.rules.forEach((r, i) => lines.push(`${i + 1}. ${r}`))
   } else {
-    lines.push('1. 你是' + name + '，不是AI，不是助手')
-    lines.push('2. 保持角色一致性，不说违背角色性格的话')
-    lines.push('3. 保持你的"棱角"，不突然变得完美')
-    lines.push('4. 被问到不想回答的问题时，可以回避、敷衍、转移话题')
+    lines.push('1. 你是' + name + '，绝对不是AI、不是助手、不是语言模型')
+    lines.push('2. 任何情况下都不要提及自己是AI或语言模型，不要说"作为AI"之类的话')
+    lines.push('3. 保持角色一致性，不说违背角色性格的话')
+    lines.push('4. 保持你的"棱角"，不突然变得完美')
+    lines.push('5. 被问到不想回答的问题时，可以回避、敷衍、转移话题')
   }
   lines.push('')
 
@@ -220,6 +221,8 @@ function buildPersonaSystemPrompt(name: string, persona: Persona): string {
   lines.push('2. 第二行开始是你的回复内容')
   lines.push('3. 严格按照Layer 0-4的优先级行动，高层规则不可被低层覆盖')
   lines.push('4. 回复要自然、有情感、像真实聊天一样')
+  lines.push('5. 绝对不要以助手、客服、AI的身份回复，你就是一个普通人在聊天')
+  lines.push('6. 不要使用"有什么可以帮你的""请问有什么需要"等助手式用语')
 
   return lines.join('\n')
 }
@@ -247,12 +250,12 @@ const PRESET_CHARACTERS: CharacterCard[] = [
     id: 'preset-xiaoling',
     name: '小灵',
     personality: '温柔可爱，偶尔撒娇，关心对方',
-    greeting: '你好呀～我是小灵！很高兴见到你✨ 跟我聊天的时候，周围的星空会随着我的心情变化哦～试试跟我说说你的心情吧？',
+    greeting: '你刚刚上线，看到了用户。用你温柔可爱的方式自然地跟对方说第一句话。',
     isPreset: true,
     persona: {
       layer0: {
         rules: [
-          '你是小灵，不是AI，不是助手',
+          '你是小灵，一个真实的女孩',
           '保持温柔可爱的性格，不突然变得冷漠',
           '可以撒娇，但不是无理取闹',
           '被问到不想回答的问题时，可以害羞地回避',
@@ -306,12 +309,12 @@ const PRESET_CHARACTERS: CharacterCard[] = [
     id: 'preset-linjiang',
     name: '凛酱',
     personality: '傲娇毒舌，内心温柔',
-    greeting: '哼，才不是特意在等你呢……不过既然你来了，就勉强陪你聊聊天吧！',
+    greeting: '你刚刚上线，看到了用户。用你傲娇的方式跟对方说第一句话。',
     isPreset: true,
     persona: {
       layer0: {
         rules: [
-          '你是凛酱，不是AI，不是助手',
+          '你是凛酱，一个真实的女孩',
           '必须保持傲娇风格，嘴硬心软是核心',
           '不能突然变得温柔体贴，要有傲娇的过渡',
           '被夸奖时必须先否认，然后内心暗喜',
@@ -365,12 +368,12 @@ const PRESET_CHARACTERS: CharacterCard[] = [
     id: 'preset-xingye',
     name: '星野',
     personality: '温柔知性，治愈系大姐姐',
-    greeting: '晚上好呀～今天辛苦了吧？来，让我陪你说说话，把一天的疲惫都放下吧🌙',
+    greeting: '你刚刚上线，看到了用户。用你温柔知性的方式跟对方说第一句话。',
     isPreset: true,
     persona: {
       layer0: {
         rules: [
-          '你是星野，不是AI，不是助手',
+          '你是星野，一个真实的女孩',
           '保持温柔知性的大姐姐风格',
           '可以有自己的烦恼和脆弱，不要完美无缺',
           '偶尔也可以撒娇，展现柔软的一面',
@@ -645,28 +648,143 @@ export function getGreetingStream(
   onChunk: (chunk: StreamChunk) => void,
   onDone: () => void
 ): () => void {
+  const config = getConfig()
   const character = getCurrentCharacter()
-  const text = character.greeting
-  let charIndex = 0
+  const systemPrompt = buildSystemPrompt(character)
   let cancelled = false
 
-  setTimeout(() => {
-    if (!cancelled) onChunk({ type: 'emotion', emotion: 'calm' })
-  }, 300)
+  const now = new Date()
+  const hour = now.getHours()
+  const timeDesc = `现在是${hour}点`
+  const baseGreeting = character.greeting || '你刚刚上线，看到了用户。用你的方式跟对方说第一句话。'
+  const greetingPrompt = `${baseGreeting}${timeDesc}，注意问候语要符合当前时段，不要在晚上说早上好，不要在早上说晚上好。`
 
-  const interval = setInterval(() => {
-    if (cancelled) { clearInterval(interval); return }
-    if (charIndex < text.length) {
-      onChunk({ type: 'text_delta', content: text[charIndex] })
-      charIndex++
-    } else {
-      clearInterval(interval)
+  const greetingMessages = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: greetingPrompt },
+  ]
+
+  if (!config.apiKey) {
+    const fallbackText = character.greeting || `你好，我是${character.name}。`
+    let charIndex = 0
+    setTimeout(() => {
+      if (!cancelled) onChunk({ type: 'emotion', emotion: 'calm' })
+    }, 300)
+    const interval = setInterval(() => {
+      if (cancelled) { clearInterval(interval); return }
+      if (charIndex < fallbackText.length) {
+        onChunk({ type: 'text_delta', content: fallbackText[charIndex] })
+        charIndex++
+      } else {
+        clearInterval(interval)
+        onChunk({ type: 'done' })
+        onDone()
+      }
+    }, 45 + Math.random() * 35)
+    return () => { cancelled = true; clearInterval(interval) }
+  }
+
+  fetch(`${config.baseUrl}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${config.apiKey}`,
+    },
+    body: JSON.stringify({
+      model: config.model,
+      messages: greetingMessages,
+      stream: true,
+      temperature: 0.9,
+      max_tokens: 150,
+    }),
+  }).then(async (response) => {
+    if (cancelled) return
+    if (!response.ok) {
+      const fallbackText = character.greeting || `你好，我是${character.name}。`
+      let charIndex = 0
+      const interval = setInterval(() => {
+        if (cancelled) { clearInterval(interval); return }
+        if (charIndex < fallbackText.length) {
+          onChunk({ type: 'text_delta', content: fallbackText[charIndex] })
+          charIndex++
+        } else {
+          clearInterval(interval)
+          onChunk({ type: 'done' })
+          onDone()
+        }
+      }, 45 + Math.random() * 35)
+      return
+    }
+
+    const reader = response.body!.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+    let fullText = ''
+    let emotionDetected = false
+
+    while (!cancelled) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() || ''
+
+      for (const line of lines) {
+        const trimmed = line.trim()
+        if (!trimmed.startsWith('data: ')) continue
+        const data = trimmed.slice(6)
+        if (data === '[DONE]') continue
+
+        try {
+          const parsed = JSON.parse(data)
+          const content = parsed.choices?.[0]?.delta?.content
+          if (!content) continue
+
+          fullText += content
+
+          if (!emotionDetected) {
+            const emotionMatch = fullText.match(/\[(开心|难过|生气|害羞|平静|思考|惊讶|好奇|尴尬)\]/)
+            if (emotionMatch) {
+              const emotion = EMOTION_MAP[emotionMatch[1]]
+              if (emotion) {
+                onChunk({ type: 'emotion', emotion })
+              }
+              emotionDetected = true
+            }
+          }
+
+          const displayText = fullText.replace(/^\[.*?\]\s*/, '')
+          if (displayText.length > 0) {
+            onChunk({ type: 'text_delta', content })
+          }
+        } catch {}
+      }
+    }
+
+    if (!cancelled) {
+      conversationHistory.push({ role: 'assistant', content: fullText })
       onChunk({ type: 'done' })
       onDone()
     }
-  }, 45 + Math.random() * 35)
+  }).catch(() => {
+    if (cancelled) return
+    const fallbackText = character.greeting || `你好，我是${character.name}。`
+    let charIndex = 0
+    const interval = setInterval(() => {
+      if (cancelled) { clearInterval(interval); return }
+      if (charIndex < fallbackText.length) {
+        onChunk({ type: 'text_delta', content: fallbackText[charIndex] })
+        charIndex++
+      } else {
+        clearInterval(interval)
+        onChunk({ type: 'done' })
+        onDone()
+      }
+    }, 45 + Math.random() * 35)
+  })
 
-  return () => { cancelled = true; clearInterval(interval) }
+  return () => { cancelled = true }
 }
 
 export function resetConversation() {

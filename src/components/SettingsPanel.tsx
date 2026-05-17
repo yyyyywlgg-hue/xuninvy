@@ -11,6 +11,8 @@ import { CyberRadio, CyberChipGroup } from './CyberButton'
 interface Props {
   visible: boolean
   onClose: () => void
+  initialTab?: TabId
+  onReset?: () => void
 }
 
 type TabId = 'character' | 'voice' | 'model' | 'api'
@@ -35,8 +37,8 @@ const PRESET_CONFIGS = [
 
 const OPENAI_VOICES = ['alloy', 'ash', 'ballad', 'coral', 'echo', 'fable', 'onyx', 'nova', 'sage', 'shimmer']
 
-export default function SettingsPanel({ visible, onClose }: Props) {
-  const [activeTab, setActiveTab] = useState<TabId>('character')
+export default function SettingsPanel({ visible, onClose, initialTab, onReset }: Props) {
+  const [activeTab, setActiveTab] = useState<TabId>(initialTab || 'character')
 
   const [llmConfig, setLlmConfig] = useState<LLMConfig>(getConfig())
   const [ttsConfig, setTtsConfig] = useState<TTSConfig>(getTTSConfig())
@@ -60,8 +62,9 @@ export default function SettingsPanel({ visible, onClose }: Props) {
       setCharacters(getCharacterCards())
       setSelectedCharId(getSelectedCharacterId())
       reloadModels()
+      if (initialTab) setActiveTab(initialTab)
     }
-  }, [visible, reloadModels])
+  }, [visible, reloadModels, initialTab])
 
   const handleSave = useCallback(() => {
     saveConfig(llmConfig)
@@ -72,9 +75,22 @@ export default function SettingsPanel({ visible, onClose }: Props) {
   }, [llmConfig, ttsConfig, sttConfig, selectedCharId, onClose])
 
   const handleReset = async () => {
+    localStorage.removeItem('llm-config')
+    localStorage.removeItem('custom-characters')
+    localStorage.removeItem('selected-character-id')
+    localStorage.removeItem('selected-model-id')
+    localStorage.removeItem('tts-config')
+    localStorage.removeItem('stt-config')
+    indexedDB.deleteDatabase('ai-spirit-realm-chat')
     resetConversation()
     await useChatStore.getState().clearHistory()
-    onClose()
+    setLlmConfig({ baseUrl: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4-flash', apiKey: '' })
+    setTtsConfig(getTTSConfig())
+    setSttConfig(getSTTConfig())
+    setCharacters(getCharacterCards())
+    setSelectedCharId(getSelectedCharacterId())
+    setActiveTab('api')
+    onReset?.()
   }
 
   const handleNewCharacter = useCallback(() => {
@@ -82,7 +98,7 @@ export default function SettingsPanel({ visible, onClose }: Props) {
       id: '',
       name: '',
       personality: '',
-      greeting: '',
+      greeting: '你刚刚上线，看到了用户。用你自己的方式跟对方说第一句话。',
       systemPrompt: '',
       isPreset: false,
       persona: {
@@ -101,10 +117,16 @@ export default function SettingsPanel({ visible, onClose }: Props) {
     if (!editingChar) return
     if (!editingChar.name.trim()) return
 
+    const charToSave = {
+      ...editingChar,
+      greeting: editingChar.greeting || `你刚刚上线，看到了用户。用你${editingChar.personality || '自己'}的方式跟对方说第一句话。`,
+      systemPrompt: editingChar.systemPrompt || '',
+    }
+
     if (editingChar.id) {
-      updateCharacterCard(editingChar.id, editingChar)
+      updateCharacterCard(editingChar.id, charToSave)
     } else {
-      const newCard = addCharacterCard(editingChar)
+      const newCard = addCharacterCard(charToSave)
       setSelectedCharId(newCard.id)
     }
     setCharacters(getCharacterCards())
@@ -186,22 +208,16 @@ export default function SettingsPanel({ visible, onClose }: Props) {
               config={llmConfig}
               onChange={setLlmConfig}
               onApplyPreset={applyPreset}
+              onReset={handleReset}
             />
           )}
         </div>
 
-        <div className="flex gap-3 p-5 pt-2">
+        <div className="p-5 pt-2">
           <hr className="cyber-divider absolute left-0 right-0" style={{ top: 0 }} />
           <button
-            onClick={handleReset}
-            className="cyber-btn-action flex items-center gap-1.5 px-4 py-2 border-[var(--cyber-red)]/30 text-[var(--cyber-red)]/60 text-[10px] hover:text-[var(--cyber-red)] hover:border-[var(--cyber-red)]/60"
-          >
-            <RotateCcw size={12} />
-            RESET
-          </button>
-          <button
             onClick={handleSave}
-            className="cyber-btn-action flex-1 flex items-center justify-center gap-1.5 px-4 py-2 border-[var(--cyber-cyan)]/30 bg-[var(--cyber-cyan)]/10 text-[var(--cyber-cyan)] text-[10px] hover:bg-[var(--cyber-cyan)]/20 hover:border-[var(--cyber-cyan)]/60"
+            className="cyber-btn-action w-full flex items-center justify-center gap-1.5 px-4 py-2 border-[var(--cyber-cyan)]/30 bg-[var(--cyber-cyan)]/10 text-[var(--cyber-cyan)] text-[10px] hover:bg-[var(--cyber-cyan)]/20 hover:border-[var(--cyber-cyan)]/60"
           >
             <Save size={12} />
             SAVE
@@ -359,13 +375,6 @@ function CharacterTab({
                 onChange={(e) => onEditChange({ ...editingChar, personality: e.target.value })}
                 placeholder="性格描述（简短）"
                 className="cyber-input-field w-full px-3 py-2 text-xs"
-              />
-              <textarea
-                value={editingChar.greeting}
-                onChange={(e) => onEditChange({ ...editingChar, greeting: e.target.value })}
-                placeholder="开场白"
-                rows={2}
-                className="cyber-input-field w-full px-3 py-2 text-xs resize-none"
               />
             </>
           )}
@@ -646,9 +655,6 @@ function CharacterTab({
                 )}
               </div>
             </div>
-            {char.id === selectedCharId && (
-              <div className="mt-1.5 text-[10px] text-white/40 line-clamp-1">{char.greeting.slice(0, 80)}</div>
-            )}
           </div>
         ))}
       </div>
@@ -851,14 +857,16 @@ function VoiceTab({
 }
 
 function ApiTab({
-  config, onChange, onApplyPreset,
+  config, onChange, onApplyPreset, onReset,
 }: {
   config: LLMConfig
   onChange: (c: LLMConfig) => void
   onApplyPreset: (preset: typeof PRESET_CONFIGS[0]) => void
+  onReset?: () => void
 }) {
   const hasConfig = config.apiKey.length > 0
   const matchedPreset = PRESET_CONFIGS.find(p => p.baseUrl === config.baseUrl && p.model === config.model)
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
 
   return (
     <div className="space-y-4">
@@ -926,6 +934,51 @@ function ApiTab({
           placeholder="glm-4-flash"
         />
       </div>
+
+      {hasConfig && onReset && (
+        <>
+          <div className="pt-2 border-t border-white/8">
+            <button
+              onClick={() => setShowResetConfirm(true)}
+              className="cyber-btn-action w-full flex items-center justify-center gap-1.5 px-4 py-2 border-[var(--cyber-red)]/30 text-[var(--cyber-red)]/60 text-[10px] hover:text-[var(--cyber-red)] hover:border-[var(--cyber-red)]/60"
+            >
+              <RotateCcw size={12} />
+              RESET ALL
+            </button>
+          </div>
+
+          {showResetConfirm && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+              <div
+                className="bg-[var(--cyber-surface)] border border-[var(--cyber-red)]/30 p-6 max-w-sm w-full mx-4 relative"
+                style={{ clipPath: 'polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px))' }}
+              >
+                <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[var(--cyber-red)]/50 to-transparent" />
+                <h3 className="text-[var(--cyber-red)] text-sm font-bold tracking-wider mb-3 font-mono">RESET ALL DATA</h3>
+                <p className="text-[var(--cyber-text)]/60 text-xs mb-6 leading-relaxed">
+                  确定要重置所有数据吗？这将清除 API Key、角色卡、对话记录等所有配置，此操作不可撤销。
+                </p>
+                <div className="flex gap-3 justify-end">
+                  <button
+                    onClick={() => setShowResetConfirm(false)}
+                    className="px-4 py-2 text-xs border border-[var(--cyber-border)] text-[var(--cyber-text)]/50 hover:text-[var(--cyber-text)] hover:border-[var(--cyber-cyan)]/30 transition-all duration-300 font-mono"
+                    style={{ clipPath: 'polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 5px 100%, 0 calc(100% - 5px))' }}
+                  >
+                    CANCEL
+                  </button>
+                  <button
+                    onClick={() => { setShowResetConfirm(false); onReset() }}
+                    className="px-4 py-2 text-xs border border-[var(--cyber-red)]/40 bg-[var(--cyber-red)]/10 text-[var(--cyber-red)] hover:bg-[var(--cyber-red)]/20 transition-all duration-300 font-mono"
+                    style={{ clipPath: 'polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 5px 100%, 0 calc(100% - 5px))' }}
+                  >
+                    RESET
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }

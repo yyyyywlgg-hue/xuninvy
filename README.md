@@ -1,6 +1,6 @@
 <div align="center">
 
-**赛博朋克风格 AI 虚拟伴侣 · Live2D 虚拟形象 · 流式对话**
+** AI 虚拟伴侣 · Live2D 虚拟形象 · 流式对话**
 
 [在线体验](https://yyyyywlgg-hue.github.io/xuninvy/) · [功能特性](#-功能特性) · [快速开始](#-快速开始) · [技术栈](#-技术栈)
 
