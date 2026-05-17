@@ -9,6 +9,7 @@ import MatrixBackground from './components/MatrixBackground'
 import { useChatStore } from './store/useChatStore'
 import { streamChat, getGreetingStream, getConfig, initConversation, restoreConversationFromMessages } from './services/llmService'
 import type { StreamChunk } from './types'
+import { stripEmotionTag } from './types'
 import { speak, stop as stopTTS } from './services/ttsService'
 import { startListening, stopListening, getIsListening } from './services/sttService'
 
@@ -72,11 +73,11 @@ export default function App() {
       (chunk: StreamChunk) => {
         if (chunk.type === 'text_delta' && chunk.content) {
           appendStreamingText(chunk.content)
-          updateLastAiMessage(useChatStore.getState().streamingText)
+          updateLastAiMessage(stripEmotionTag(useChatStore.getState().streamingText))
         } else if (chunk.type === 'emotion' && chunk.emotion) {
           setCurrentEmotion(chunk.emotion)
         } else if (chunk.type === 'done') {
-          updateLastAiMessage(useChatStore.getState().streamingText)
+          updateLastAiMessage(stripEmotionTag(useChatStore.getState().streamingText))
           setLastAiMessageDone()
           setStreamingText('')
         }
@@ -110,18 +111,18 @@ export default function App() {
         if (chunk.type === 'text_delta' && chunk.content) {
           fullText += chunk.content
           setStreamingText(fullText)
-          updateLastAiMessage(fullText)
+          updateLastAiMessage(stripEmotionTag(fullText))
         } else if (chunk.type === 'emotion' && chunk.emotion) {
           setCurrentEmotion(chunk.emotion)
         } else if (chunk.type === 'done') {
-          const finalText = fullText.replace(/^\[.*?\]\s*/, '')
+          const finalText = stripEmotionTag(fullText)
           if (finalText) {
             speak(finalText)
           }
         }
       },
       () => {
-        updateLastAiMessage(fullText)
+        updateLastAiMessage(stripEmotionTag(fullText))
         setLastAiMessageDone()
         setStreamingText('')
       },

@@ -1,3 +1,5 @@
+import { stripEmotionTag } from '../types'
+
 type LipSyncCallback = (mouthOpen: number, isSpeaking: boolean) => void
 
 export type TTSProvider = 'openai-compatible' | 'none'
@@ -88,7 +90,7 @@ async function speakOpenAI(text: string) {
     return
   }
 
-  const cleanText = text.replace(/^\[.*?\]\s*/, '')
+  const cleanText = stripEmotionTag(text)
   if (!cleanText) return
 
   try {

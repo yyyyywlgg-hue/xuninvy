@@ -145,6 +145,12 @@ export const EMOTION_CONFIGS: Record<Emotion, EmotionConfig> = {
   },
 }
 
+export const EMOTION_TAG_REGEX = /\[(开心|难过|生气|害羞|平静|思考|惊讶|好奇|尴尬)\]\s*/g
+export const EMOTION_TAG_PARTIAL_REGEX = /\[(?:开|难|生|害|平|思|惊|好|尴|开心|难过|生气|害羞|平静|思考|惊讶|好奇|尴尬)?$/
+
+export const stripEmotionTag = (text: string) =>
+  text.replace(EMOTION_TAG_REGEX, '').replace(EMOTION_TAG_PARTIAL_REGEX, '')
+
 export interface ChatMessage {
   id: string
   role: 'user' | 'ai'

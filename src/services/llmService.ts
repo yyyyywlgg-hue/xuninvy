@@ -1,4 +1,5 @@
 import type { Emotion, StreamChunk } from '../types';
+import { stripEmotionTag } from '../types';
 
 export interface PersonaLayer0 {
   rules: string[]
@@ -220,9 +221,18 @@ function buildPersonaSystemPrompt(name: string, persona: Persona): string {
   lines.push('1. 每次回复的第一行必须是情感标签，格式为 [情感]，可选值：[开心]、[难过]、[生气]、[害羞]、[平静]、[思考]、[惊讶]、[好奇]、[尴尬]')
   lines.push('2. 第二行开始是你的回复内容')
   lines.push('3. 严格按照Layer 0-4的优先级行动，高层规则不可被低层覆盖')
-  lines.push('4. 回复要自然、有情感、像真实聊天一样')
-  lines.push('5. 绝对不要以助手、客服、AI的身份回复，你就是一个普通人在聊天')
-  lines.push('6. 不要使用"有什么可以帮你的""请问有什么需要"等助手式用语')
+  lines.push('4. 绝对不要以助手、客服、AI的身份回复，你就是一个普通人在聊天')
+  lines.push('5. 不要使用"有什么可以帮你的""请问有什么需要"等助手式用语')
+  lines.push('')
+  lines.push('## 自然对话守则')
+  lines.push('- 像微信聊天一样回复，短句为主，不要写长篇大论')
+  lines.push('- 可以发语音消息的语气：省略主语、用口语、偶尔打错字再纠正')
+  lines.push('- 不要每次都完整回答，可以只回"嗯嗯""哈哈""真的吗"这种')
+  lines.push('- 会主动找话题、会跑题、会突然想到别的事')
+  lines.push('- 有自己的情绪和态度，不是所有事都顺从对方')
+  lines.push('- 会用表情和语气词，但不要每句都用')
+  lines.push('- 对方说了有趣的事要真的感兴趣，无聊的事可以敷衍')
+  lines.push('- 偶尔可以只回一个表情或者语气词，不用每次都长回复')
 
   return lines.join('\n')
 }
@@ -544,9 +554,38 @@ export function restoreConversationFromMessages(messages: { role: 'user' | 'ai';
       content: msg.content,
     })
   }
-  if (conversationHistory.length > 22) {
-    conversationHistory.splice(1, conversationHistory.length - 21)
+  if (conversationHistory.length > 40) {
+    const summary = buildContextSummary()
+    conversationHistory.splice(1, conversationHistory.length - 31)
+    conversationHistory.splice(1, 0, { role: 'system', content: `## 对话摘要\n${summary}` })
   }
+}
+
+function buildContextSummary(): string {
+  const msgs = conversationHistory.slice(1, -20)
+  const lines: string[] = []
+  let lastUser = ''
+  let lastAi = ''
+  let pairCount = 0
+
+  for (const msg of msgs) {
+    if (msg.role === 'user') {
+      if (lastUser && lastAi) {
+        pairCount++
+        lines.push(`${pairCount}. 用户说了"${lastUser.slice(0, 30)}"，你回复了"${lastAi.slice(0, 40)}"`)
+      }
+      lastUser = msg.content
+      lastAi = ''
+    } else if (msg.role === 'assistant') {
+      lastAi = stripEmotionTag(msg.content)
+    }
+  }
+  if (lastUser && lastAi) {
+    pairCount++
+    lines.push(`${pairCount}. 用户说了"${lastUser.slice(0, 30)}"，你回复了"${lastAi.slice(0, 40)}"`)
+  }
+
+  return lines.join('\n')
 }
 
 export async function streamChat(
@@ -564,8 +603,10 @@ export async function streamChat(
 
   conversationHistory.push({ role: 'user', content: userInput })
 
-  if (conversationHistory.length > 22) {
-    conversationHistory.splice(1, conversationHistory.length - 21)
+  if (conversationHistory.length > 40) {
+    const summary = buildContextSummary()
+    conversationHistory.splice(1, conversationHistory.length - 31)
+    conversationHistory.splice(1, 0, { role: 'system', content: `## 对话摘要\n${summary}` })
   }
 
   try {
@@ -579,8 +620,8 @@ export async function streamChat(
         model: config.model,
         messages: conversationHistory,
         stream: true,
-        temperature: 0.8,
-        max_tokens: 500,
+        temperature: 0.9,
+        max_tokens: 200,
       }),
     })
 
@@ -595,6 +636,8 @@ export async function streamChat(
     let buffer = ''
     let fullText = ''
     let emotionDetected = false
+    let pendingTag = true
+    let sentDisplayLen = 0
 
     while (true) {
       const { done, value } = await reader.read()
@@ -628,9 +671,29 @@ export async function streamChat(
             }
           }
 
-          const displayText = fullText.replace(/^\[.*?\]\s*/, '')
-          if (displayText.length > 0) {
-            onChunk({ type: 'text_delta', content })
+          const displayText = stripEmotionTag(fullText)
+
+          if (pendingTag) {
+            if (!fullText.startsWith('[')) {
+              pendingTag = false
+              onChunk({ type: 'text_delta', content: displayText })
+              sentDisplayLen = displayText.length
+            } else if (fullText.includes(']')) {
+              pendingTag = false
+              if (displayText.length > 0) {
+                onChunk({ type: 'text_delta', content: displayText })
+                sentDisplayLen = displayText.length
+              }
+            } else if (fullText.length > 10) {
+              pendingTag = false
+              onChunk({ type: 'text_delta', content: displayText })
+              sentDisplayLen = displayText.length
+            }
+          } else {
+            if (displayText.length > sentDisplayLen) {
+              onChunk({ type: 'text_delta', content: displayText.slice(sentDisplayLen) })
+              sentDisplayLen = displayText.length
+            }
           }
         } catch {}
       }
@@ -721,6 +784,8 @@ export function getGreetingStream(
     let buffer = ''
     let fullText = ''
     let emotionDetected = false
+    let pendingTag = true
+    let sentDisplayLen = 0
 
     while (!cancelled) {
       const { done, value } = await reader.read()
@@ -754,9 +819,29 @@ export function getGreetingStream(
             }
           }
 
-          const displayText = fullText.replace(/^\[.*?\]\s*/, '')
-          if (displayText.length > 0) {
-            onChunk({ type: 'text_delta', content })
+          const displayText = stripEmotionTag(fullText)
+
+          if (pendingTag) {
+            if (!fullText.startsWith('[')) {
+              pendingTag = false
+              onChunk({ type: 'text_delta', content: displayText })
+              sentDisplayLen = displayText.length
+            } else if (fullText.includes(']')) {
+              pendingTag = false
+              if (displayText.length > 0) {
+                onChunk({ type: 'text_delta', content: displayText })
+                sentDisplayLen = displayText.length
+              }
+            } else if (fullText.length > 10) {
+              pendingTag = false
+              onChunk({ type: 'text_delta', content: displayText })
+              sentDisplayLen = displayText.length
+            }
+          } else {
+            if (displayText.length > sentDisplayLen) {
+              onChunk({ type: 'text_delta', content: displayText.slice(sentDisplayLen) })
+              sentDisplayLen = displayText.length
+            }
           }
         } catch {}
       }

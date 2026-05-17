@@ -4,6 +4,7 @@ import type { DisplayModel } from '../types/model'
 import { loadModels, getSelectedModelId, setSelectedModelId, extractZipToBlobUrls, getPresetModels } from '../services/modelService'
 import { loadMessages, saveMessage, clearMessages } from '../services/chatStorage'
 import { restoreConversationFromMessages } from '../services/llmService'
+import { stripEmotionTag } from '../types'
 import { ModelFormat } from '../types/model'
 
 interface ModelLoadRequest {
@@ -72,8 +73,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
     try {
       const saved = await loadMessages()
       if (saved.length > 0) {
-        restoreConversationFromMessages(saved)
-        set({ messages: saved, historyLoaded: true })
+        const cleaned = saved.map(m =>
+          m.role === 'ai' ? { ...m, content: stripEmotionTag(m.content) } : m
+        )
+        restoreConversationFromMessages(cleaned)
+        set({ messages: cleaned, historyLoaded: true })
         return true
       }
     } catch (err) {
@@ -108,7 +112,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const messages = [...state.messages]
       const lastIdx = messages.findLastIndex((m) => m.role === 'ai')
       if (lastIdx >= 0) {
-        messages[lastIdx] = { ...messages[lastIdx], content: text }
+        messages[lastIdx] = { ...messages[lastIdx], content: stripEmotionTag(text) }
       }
       return { messages }
     }),
