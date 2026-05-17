@@ -61,7 +61,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   isStreaming: false,
   streamingText: '',
   showSettings: false,
-  modelUrl: '/live2d/hiyori/hiyori_free_t08.model3.json',
+  modelUrl: `${import.meta.env.BASE_URL}live2d/hiyori/hiyori_free_t08.model3.json`,
   modelLoaded: false,
   models: getPresetModels(),
   selectedModelId: getSelectedModelId() || 'preset-hiyori-free',
