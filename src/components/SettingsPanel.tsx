@@ -25,8 +25,11 @@ const TAB_OPTIONS: { value: TabId; label: string; number: string }[] = [
 const PRESET_CONFIGS = [
   { label: '智谱 GLM-4-Flash', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4-flash' },
   { label: '智谱 GLM-4-Plus', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4-plus' },
-  { label: 'DeepSeek', baseUrl: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },
-  { label: '蓝耘 MaaS', baseUrl: 'https://maas-api.lanyun.net/v1', model: 'deepseek-v3-2-exp' },
+  { label: 'DeepSeek Chat', baseUrl: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },
+  { label: 'DeepSeek R1', baseUrl: 'https://api.deepseek.com/v1', model: 'deepseek-reasoner' },
+  { label: 'MiniMax M1', baseUrl: 'https://api.minimaxi.com/v1', model: 'MiniMax-M1' },
+  { label: 'Kimi', baseUrl: 'https://api.moonshot.cn/v1', model: 'moonshot-v1-8k' },
+  { label: '小米 MiMo', baseUrl: 'https://api.xiaomimimo.com/v1', model: 'MiMo-V2-Flash' },
   { label: 'OpenAI', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o-mini' },
 ]
 

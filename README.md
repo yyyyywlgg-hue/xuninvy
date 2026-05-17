@@ -1,7 +1,5 @@
 <div align="center">
 
-# 🔮 AI 灵境
-
 **赛博朋克风格 AI 虚拟伴侣 · Live2D 虚拟形象 · 流式对话**
 
 [在线体验](https://yyyyywlgg-hue.github.io/xuninvy/) · [功能特性](#-功能特性) · [快速开始](#-快速开始) · [技术栈](#-技术栈)
@@ -82,8 +80,10 @@ npm run dev
 3. 填入 API Base URL 和 API Key
 4. 支持的快捷配置：
    - 智谱 GLM-4-Flash / GLM-4-Plus
-   - DeepSeek
-   - 蓝耘 MaaS
+   - DeepSeek Chat / DeepSeek R1
+   - MiniMax M1
+   - Kimi (Moonshot)
+   - 小米 MiMo
    - OpenAI
 
 ### 构建部署
