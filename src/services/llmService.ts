@@ -718,7 +718,8 @@ export function getGreetingStream(
 
   const now = new Date()
   const hour = now.getHours()
-  const timeDesc = `现在是${hour}点`
+  const period = hour >= 0 && hour < 6 ? '凌晨' : hour < 9 ? '早上' : hour < 12 ? '上午' : hour < 14 ? '中午' : hour < 18 ? '下午' : hour < 20 ? '傍晚' : '晚上'
+  const timeDesc = `现在是${period}${hour}点`
   const baseGreeting = character.greeting || '你刚刚上线，看到了用户。用你的方式跟对方说第一句话。'
   const greetingPrompt = `${baseGreeting}${timeDesc}，注意问候语要符合当前时段，不要在晚上说早上好，不要在早上说晚上好。`
 

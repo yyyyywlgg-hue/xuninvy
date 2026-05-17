@@ -54,6 +54,8 @@ export default function SettingsPanel({ visible, onClose, initialTab, onReset }:
   const reloadModels = useChatStore((s) => s.reloadModels)
   const switchToModel = useChatStore((s) => s.switchToModel)
 
+  const initialTabRef = useRef(initialTab)
+
   useEffect(() => {
     if (visible) {
       setLlmConfig(getConfig())
@@ -62,9 +64,9 @@ export default function SettingsPanel({ visible, onClose, initialTab, onReset }:
       setCharacters(getCharacterCards())
       setSelectedCharId(getSelectedCharacterId())
       reloadModels()
-      if (initialTab) setActiveTab(initialTab)
+      if (initialTabRef.current) setActiveTab(initialTabRef.current)
     }
-  }, [visible, reloadModels, initialTab])
+  }, [visible, reloadModels])
 
   const handleSave = useCallback(() => {
     saveConfig(llmConfig)
@@ -83,14 +85,16 @@ export default function SettingsPanel({ visible, onClose, initialTab, onReset }:
     localStorage.removeItem('stt-config')
     indexedDB.deleteDatabase('ai-spirit-realm-chat')
     resetConversation()
-    await useChatStore.getState().clearHistory()
-    setLlmConfig({ baseUrl: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4-flash', apiKey: '' })
+
+    setLlmConfig(getConfig())
     setTtsConfig(getTTSConfig())
     setSttConfig(getSTTConfig())
     setCharacters(getCharacterCards())
     setSelectedCharId(getSelectedCharacterId())
     setActiveTab('api')
     onReset?.()
+
+    await useChatStore.getState().clearHistory()
   }
 
   const handleNewCharacter = useCallback(() => {
