@@ -40,7 +40,7 @@
 - **STT**：Web Speech API 语音识别，支持多语言
 - 连续识别 / 识别后自动发送
 
-### 🎨 赛博朋克 UI
+### 🎨 UI
 - 全息投影风格界面，不遮挡虚拟形象
 - 切角多边形（clip-path）设计语言
 - 霓虹光效 / 扫描线 / 故障动画
@@ -121,7 +121,7 @@ src/
 ├── App.tsx                  # 主界面
 ├── components/
 │   ├── ChatBubble.tsx       # 聊天气泡
-│   ├── CyberButton.tsx      # 赛博朋克按钮
+│   ├── CyberButton.tsx      # 
 │   ├── InputBar.tsx         # 输入栏
 │   ├── ModelSelector.tsx    # 模型选择器
 │   ├── PerfMonitor.tsx      # 性能监控
