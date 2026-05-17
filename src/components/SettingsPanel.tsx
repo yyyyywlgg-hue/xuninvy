@@ -864,8 +864,9 @@ function ApiTab({
   onApplyPreset: (preset: typeof PRESET_CONFIGS[0]) => void
   onReset?: () => void
 }) {
-  const hasConfig = config.apiKey.length > 0
-  const matchedPreset = PRESET_CONFIGS.find(p => p.baseUrl === config.baseUrl && p.model === config.model)
+  const [savedConfig] = useState(() => getConfig())
+  const hasConfig = savedConfig.apiKey.length > 0
+  const matchedPreset = PRESET_CONFIGS.find(p => p.baseUrl === savedConfig.baseUrl && p.model === savedConfig.model)
   const [showResetConfirm, setShowResetConfirm] = useState(false)
 
   return (
@@ -882,9 +883,9 @@ function ApiTab({
             )}
           </div>
           <div className="text-[11px] text-[var(--text-secondary)] space-y-0.5 overflow-hidden">
-            <div className="truncate">URL: <span className="text-[var(--text-primary)]/70">{config.baseUrl}</span></div>
-            <div className="truncate">KEY: <span className="text-[var(--text-primary)]/70">{config.apiKey.slice(0, 6)}•••</span></div>
-            <div className="truncate">MODEL: <span className="text-[var(--text-primary)]/70">{config.model}</span></div>
+            <div className="truncate">URL: <span className="text-[var(--text-primary)]/70">{savedConfig.baseUrl}</span></div>
+            <div className="truncate">KEY: <span className="text-[var(--text-primary)]/70">{savedConfig.apiKey.slice(0, 6)}•••</span></div>
+            <div className="truncate">MODEL: <span className="text-[var(--text-primary)]/70">{savedConfig.model}</span></div>
           </div>
         </div>
       )}
