@@ -29,6 +29,7 @@ export class ParticleSystem {
   private mouseY: number = 0;
   private width: number;
   private height: number;
+  private mousemoveHandler: ((e: MouseEvent) => void) | null = null;
 
   constructor(app: Application, width: number, height: number) {
     this.width = width;
@@ -38,10 +39,11 @@ export class ParticleSystem {
     this.container.zIndex = 0;
     app.stage.addChild(this.container);
 
-    window.addEventListener('mousemove', (e) => {
+    this.mousemoveHandler = (e: MouseEvent) => {
       this.mouseX = e.clientX;
       this.mouseY = e.clientY;
-    });
+    };
+    window.addEventListener('mousemove', this.mousemoveHandler);
   }
 
   setEmotion(emotion: Emotion) {
@@ -143,6 +145,10 @@ export class ParticleSystem {
   }
 
   destroy() {
+    if (this.mousemoveHandler) {
+      window.removeEventListener('mousemove', this.mousemoveHandler);
+      this.mousemoveHandler = null;
+    }
     this.particles.forEach((p) => p.graphic.destroy());
     this.pool.forEach((p) => p.graphic.destroy());
     this.container.destroy();

@@ -3,6 +3,7 @@ import type { ChatMessage } from '../types'
 const DB_NAME = 'ai-spirit-realm'
 const DB_VERSION = 1
 const STORE_NAME = 'messages'
+const MAX_MESSAGES = 200
 
 function openDB(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -50,8 +51,39 @@ export async function saveMessage(message: ChatMessage): Promise<void> {
     const tx = db.transaction(STORE_NAME, 'readwrite')
     const store = tx.objectStore(STORE_NAME)
     store.put({ ...message, isStreaming: false })
-    tx.oncomplete = () => resolve()
+    tx.oncomplete = () => {
+      pruneMessages(db)
+      resolve()
+    }
     tx.onerror = () => reject(tx.error)
+  })
+}
+
+async function pruneMessages(db: IDBDatabase): Promise<void> {
+  return new Promise((resolve) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite')
+    const store = tx.objectStore(STORE_NAME)
+    const countReq = store.count()
+    countReq.onsuccess = () => {
+      if (countReq.result <= MAX_MESSAGES) {
+        resolve()
+        return
+      }
+      const getAllReq = store.getAll()
+      getAllReq.onsuccess = () => {
+        const all = getAllReq.result as ChatMessage[]
+        all.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
+        const toDelete = all.slice(0, all.length - MAX_MESSAGES)
+        const pruneTx = db.transaction(STORE_NAME, 'readwrite')
+        const pruneStore = pruneTx.objectStore(STORE_NAME)
+        for (const msg of toDelete) {
+          pruneStore.delete(msg.id)
+        }
+        pruneTx.oncomplete = () => resolve()
+        pruneTx.onerror = () => resolve()
+      }
+    }
+    countReq.onerror = () => resolve()
   })
 }
 

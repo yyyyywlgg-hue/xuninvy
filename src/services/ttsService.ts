@@ -39,6 +39,7 @@ export function saveTTSConfig(config: TTSConfig) {
 }
 
 let currentAudio: HTMLAudioElement | null = null
+let currentObjectUrl: string | null = null
 let lipSyncCallback: LipSyncCallback | null = null
 let lipSyncAnimationId: number | null = null
 
@@ -113,6 +114,7 @@ async function speakOpenAI(text: string) {
 
     const blob = await response.blob()
     const url = URL.createObjectURL(blob)
+    currentObjectUrl = url
 
     const audio = new Audio(url)
     currentAudio = audio
@@ -123,13 +125,13 @@ async function speakOpenAI(text: string) {
 
     audio.onended = () => {
       stopLipSyncAnimation()
-      URL.revokeObjectURL(url)
+      if (currentObjectUrl) { URL.revokeObjectURL(currentObjectUrl); currentObjectUrl = null }
       currentAudio = null
     }
 
     audio.onerror = () => {
       stopLipSyncAnimation()
-      URL.revokeObjectURL(url)
+      if (currentObjectUrl) { URL.revokeObjectURL(currentObjectUrl); currentObjectUrl = null }
       currentAudio = null
     }
 
@@ -151,7 +153,12 @@ export function speak(text: string) {
 export function stop() {
   if (currentAudio) {
     currentAudio.pause()
+    currentAudio.src = ''
     currentAudio = null
+  }
+  if (currentObjectUrl) {
+    URL.revokeObjectURL(currentObjectUrl)
+    currentObjectUrl = null
   }
 
   stopLipSyncAnimation()

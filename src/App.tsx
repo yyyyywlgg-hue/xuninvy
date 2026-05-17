@@ -5,6 +5,7 @@ import ChatBubble from './components/ChatBubble'
 import InputBar from './components/InputBar'
 import PerfMonitor from './components/PerfMonitor'
 import SettingsPanel from './components/SettingsPanel'
+import MatrixBackground from './components/MatrixBackground'
 import { useChatStore } from './store/useChatStore'
 import { streamChat, getGreetingStream, getConfig, initConversation, restoreConversationFromMessages } from './services/llmService'
 import type { StreamChunk } from './types'
@@ -12,24 +13,20 @@ import { speak, stop as stopTTS } from './services/ttsService'
 import { startListening, stopListening, getIsListening } from './services/sttService'
 
 export default function App() {
-  const {
-    messages,
-    currentEmotion,
-    isStreaming,
-    streamingText,
-    showSettings,
-    modelLoaded,
-    addMessage,
-    updateLastAiMessage,
-    setLastAiMessageDone,
-    setCurrentEmotion,
-    setStreaming,
-    setStreamingText,
-    appendStreamingText,
-    setShowSettings,
-    loadHistory,
-    clearHistory,
-  } = useChatStore()
+  const messages = useChatStore((s) => s.messages)
+  const isStreaming = useChatStore((s) => s.isStreaming)
+  const streamingText = useChatStore((s) => s.streamingText)
+  const showSettings = useChatStore((s) => s.showSettings)
+  const addMessage = useChatStore((s) => s.addMessage)
+  const updateLastAiMessage = useChatStore((s) => s.updateLastAiMessage)
+  const setLastAiMessageDone = useChatStore((s) => s.setLastAiMessageDone)
+  const setCurrentEmotion = useChatStore((s) => s.setCurrentEmotion)
+  const setStreaming = useChatStore((s) => s.setStreaming)
+  const setStreamingText = useChatStore((s) => s.setStreamingText)
+  const appendStreamingText = useChatStore((s) => s.appendStreamingText)
+  const setShowSettings = useChatStore((s) => s.setShowSettings)
+  const loadHistory = useChatStore((s) => s.loadHistory)
+  const clearHistory = useChatStore((s) => s.clearHistory)
 
   const [input, setInput] = useState('')
   const [isRecording, setIsRecording] = useState(false)
@@ -184,6 +181,7 @@ export default function App() {
 
   return (
     <div className="w-full h-full relative overflow-hidden">
+      <MatrixBackground />
       {isReady && <PixiCanvas onAppReady={handleAppReady} />}
 
       {!isReady && (

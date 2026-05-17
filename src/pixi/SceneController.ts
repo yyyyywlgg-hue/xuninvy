@@ -117,13 +117,14 @@ export class SceneController {
   private expressionTransitionSpeed: number = 0.05;
   private targetExpression: ExpressionParams = {};
   private prevExpressionParams: Set<string> = new Set();
+  private mousemoveHandler: ((e: MouseEvent) => void) | null = null;
 
   constructor(app: Application, width: number, height: number) {
     this.app = app;
     this.particles = new ParticleSystem(app, width, height);
     this.weather = new WeatherEffects(app, width, height);
 
-    window.addEventListener('mousemove', (e) => {
+    this.mousemoveHandler = (e: MouseEvent) => {
       this.mouseX = e.clientX;
       this.mouseY = e.clientY;
       if (this.modelLoaded && this.model) {
@@ -131,7 +132,8 @@ export class SceneController {
           this.model.focus(e.clientX, e.clientY);
         } catch {}
       }
-    });
+    };
+    window.addEventListener('mousemove', this.mousemoveHandler);
   }
 
   async loadLive2DModel(modelUrl: string, cleanup?: (() => void) | null): Promise<boolean> {
@@ -380,6 +382,10 @@ export class SceneController {
   }
 
   destroy() {
+    if (this.mousemoveHandler) {
+      window.removeEventListener('mousemove', this.mousemoveHandler);
+      this.mousemoveHandler = null;
+    }
     this.particles.destroy();
     this.weather.destroy();
     this.unloadModel();

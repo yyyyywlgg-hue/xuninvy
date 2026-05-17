@@ -93,7 +93,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const lastTs = state.messages.length > 0 ? (state.messages[state.messages.length - 1].timestamp || 0) : 0
       const ts = message.timestamp ? Math.max(message.timestamp, lastTs + 1) : Math.max(Date.now(), lastTs + 1)
       const msg = { ...message, timestamp: ts }
-      const messages = [...state.messages, msg]
+      let messages = [...state.messages, msg]
+      if (messages.length > 250) {
+        messages = messages.slice(-200)
+      }
       if (!msg.isStreaming) {
         saveMessage(msg).catch(console.error)
       }

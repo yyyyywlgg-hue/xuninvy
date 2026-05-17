@@ -335,16 +335,23 @@ function CharacterTab({
 
       {showEditor && editingChar && (
         <div className="section-card p-4 space-y-3">
-          <div className="flex gap-1">
+          <div className="glass-radio-group !text-[10px]">
             {(['basic', 'persona', 'distill'] as const).map(tab => (
-              <button
+              <label
                 key={tab}
+                className={editorTab === tab ? 'active' : ''}
                 onClick={() => setEditorTab(tab)}
-                className={`tab-btn flex-1 !text-[10px] !py-1.5 ${editorTab === tab ? 'active' : ''}`}
               >
                 {tab === 'basic' ? '基础信息' : tab === 'persona' ? '人格定制' : '聊天蒸馏'}
-              </button>
+              </label>
             ))}
+            <div
+              className="glass-glider"
+              style={{
+                width: '33.333%',
+                transform: `translateX(${editorTab === 'basic' ? 0 : editorTab === 'persona' ? 100 : 200}%)`,
+              }}
+            />
           </div>
 
           {editorTab === 'basic' && (
@@ -584,46 +591,43 @@ function CharacterTab({
         </div>
       )}
 
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         {characters.map((char) => (
           <div
             key={char.id}
             onClick={() => onSelectChar(char.id)}
-            className={`section-card p-3 cursor-pointer transition-all group ${
-              char.id === selectedCharId
-                ? '!bg-[var(--accent-lavender)]/10 !border-[var(--accent-lavender)]/25'
-                : 'hover:!bg-white/4 hover:!border-white/12'
-            }`}
+            className={`char-card ${char.id === selectedCharId ? 'selected' : ''}`}
           >
-            <div className="flex items-start justify-between">
+            <div className="char-card__glow" />
+            <div className="char-card__shine" />
+            <div className="char-card__badge">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+            </div>
+            <div className="char-card__content !flex !flex-row !items-center !gap-3 !py-3">
+              <div className="char-card__image !w-12 !h-12 !mb-0 !shrink-0 !rounded-lg" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <span className={`text-sm font-medium ${char.id === selectedCharId ? 'text-[var(--accent-lavender)]' : 'text-white/80'}`}>
-                    {char.name}
-                  </span>
+                  <span className="char-card__title !text-[13px]">{char.name}</span>
+                  {char.isPreset && (
+                    <span className="tag-chip bg-white/5 text-white/45">预设</span>
+                  )}
                   {char.persona && (
                     <span className="tag-chip bg-[var(--accent-lavender)]/15 text-[var(--accent-lavender)]">PERSONA</span>
                   )}
                 </div>
-                <div className="text-[11px] text-[var(--text-secondary)] mt-0.5">{char.personality}</div>
-                {char.persona && (
+                <div className="char-card__desc !text-[11px] mt-0.5">{char.personality}</div>
+                {char.persona && char.persona.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1">
-                    {char.persona.tags.slice(0, 4).map(tag => {
+                    {char.persona.tags.slice(0, 3).map(tag => {
                       const pt = PERSONALITY_TAGS.find(p => p.value === tag)
                       return pt ? (
                         <span key={tag} className="tag-chip bg-white/5 text-white/45">{pt.label}</span>
                       ) : null
                     })}
-                    {char.persona.tags.length > 4 && (
-                      <span className="tag-chip text-white/35">+{char.persona.tags.length - 4}</span>
-                    )}
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-1 ml-2">
-                {char.isPreset && (
-                  <span className="tag-chip bg-white/5 text-white/45">预设</span>
-                )}
+              <div className="flex items-center gap-1 shrink-0">
                 {!char.isPreset && (
                   <>
                     <button
@@ -873,10 +877,10 @@ function ApiTab({
               </span>
             )}
           </div>
-          <div className="text-[11px] text-[var(--text-secondary)] space-y-0.5">
-            <div>URL: <span className="text-[var(--text-primary)]/70">{config.baseUrl}</span></div>
-            <div>KEY: <span className="text-[var(--text-primary)]/70">{config.apiKey.slice(0, 6)}{'•'.repeat(Math.max(0, config.apiKey.length - 6))}</span></div>
-            <div>MODEL: <span className="text-[var(--text-primary)]/70">{config.model}</span></div>
+          <div className="text-[11px] text-[var(--text-secondary)] space-y-0.5 overflow-hidden">
+            <div className="truncate">URL: <span className="text-[var(--text-primary)]/70">{config.baseUrl}</span></div>
+            <div className="truncate">KEY: <span className="text-[var(--text-primary)]/70">{config.apiKey.slice(0, 6)}•••</span></div>
+            <div className="truncate">MODEL: <span className="text-[var(--text-primary)]/70">{config.model}</span></div>
           </div>
         </div>
       )}

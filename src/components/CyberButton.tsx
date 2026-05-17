@@ -6,17 +6,26 @@ interface TabRadioProps {
 }
 
 export function CyberRadio({ name, options, value, onChange }: TabRadioProps) {
+  const activeIndex = options.findIndex(opt => opt.value === value)
+
   return (
-    <div className="flex gap-1 p-1 bg-[var(--bg-glass)] rounded-[var(--radius-md)] border border-[var(--border-soft)]">
-      {options.map((opt) => (
-        <button
+    <div className="glass-radio-group">
+      {options.map((opt, i) => (
+        <label
           key={opt.value}
+          className={value === opt.value ? 'active' : ''}
           onClick={() => onChange(opt.value)}
-          className={`tab-btn flex-1 ${value === opt.value ? 'active' : ''}`}
         >
           {opt.label}
-        </button>
+        </label>
       ))}
+      <div
+        className="glass-glider"
+        style={{
+          width: `${100 / options.length}%`,
+          transform: `translateX(${activeIndex * 100}%)`,
+        }}
+      />
     </div>
   )
 }
