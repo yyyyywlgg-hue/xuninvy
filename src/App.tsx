@@ -6,7 +6,7 @@ import InputBar from './components/InputBar'
 import PerfMonitor from './components/PerfMonitor'
 import SettingsPanel from './components/SettingsPanel'
 import { useChatStore } from './store/useChatStore'
-import { streamChat, getGreetingStream } from './services/llmService'
+import { streamChat, getGreetingStream, getConfig } from './services/llmService'
 import type { StreamChunk } from './types'
 import { speak, stop as stopTTS } from './services/ttsService'
 import { startListening, stopListening, getIsListening } from './services/sttService'
@@ -33,6 +33,7 @@ export default function App() {
   const [input, setInput] = useState('')
   const [isRecording, setIsRecording] = useState(false)
   const [interimText, setInterimText] = useState('')
+  const [greetingTriggered, setGreetingTriggered] = useState(false)
   const chatContainerRef = useRef<HTMLDivElement>(null)
   const pixiAppRef = useRef<any>(null)
 
@@ -42,6 +43,11 @@ export default function App() {
 
     loadHistory().then((hasHistory) => {
       if (cancelled || hasHistory) return
+
+      const config = getConfig()
+      if (!config.apiKey) return
+
+      setGreetingTriggered(true)
 
       const greetingId = `greeting-${Date.now()}`
       addMessage({ id: greetingId, role: 'ai', content: '', isStreaming: true, timestamp: Date.now() })
@@ -69,6 +75,35 @@ export default function App() {
       cancelStream?.()
     }
   }, [])
+
+  useEffect(() => {
+    if (greetingTriggered || isStreaming || messages.length > 0) return
+    if (showSettings) return
+
+    const config = getConfig()
+    if (!config.apiKey) return
+
+    setGreetingTriggered(true)
+    const greetingId = `greeting-${Date.now()}`
+    addMessage({ id: greetingId, role: 'ai', content: '', isStreaming: true, timestamp: Date.now() })
+    setStreaming(true)
+
+    getGreetingStream(
+      (chunk: StreamChunk) => {
+        if (chunk.type === 'text_delta' && chunk.content) {
+          appendStreamingText(chunk.content)
+          updateLastAiMessage(useChatStore.getState().streamingText)
+        } else if (chunk.type === 'emotion' && chunk.emotion) {
+          setCurrentEmotion(chunk.emotion)
+        } else if (chunk.type === 'done') {
+          updateLastAiMessage(useChatStore.getState().streamingText)
+          setLastAiMessageDone()
+          setStreamingText('')
+        }
+      },
+      () => {}
+    )
+  }, [showSettings, greetingTriggered, isStreaming, messages.length])
 
   useEffect(() => {
     if (chatContainerRef.current) {
