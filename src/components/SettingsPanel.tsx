@@ -364,6 +364,7 @@ function CharacterTab({
             <>
               <input
                 type="text"
+                autoComplete="off"
                 value={editingChar.name}
                 onChange={(e) => onEditChange({ ...editingChar, name: e.target.value })}
                 placeholder="角色名称"
@@ -371,6 +372,7 @@ function CharacterTab({
               />
               <input
                 type="text"
+                autoComplete="off"
                 value={editingChar.personality}
                 onChange={(e) => onEditChange({ ...editingChar, personality: e.target.value })}
                 placeholder="性格描述（简短）"
@@ -689,6 +691,7 @@ function FieldInput({ label, value, onChange }: { label: string; value?: string;
       <label className="cyber-label text-[9px]">{label}</label>
       <input
         type="text"
+        autoComplete="off"
         value={value || ''}
         onChange={e => onChange(e.target.value)}
         className="cyber-input-field w-full px-2 py-1.5 text-[11px]"
@@ -705,6 +708,7 @@ function RuleEditor({ rules, onChange }: { rules: string[]; onChange: (rules: st
           <span className="text-[9px] text-white/40 mt-2 w-3 shrink-0">{i + 1}.</span>
           <input
             type="text"
+            autoComplete="off"
             value={rule}
             onChange={e => {
               const next = [...rules]
@@ -756,6 +760,7 @@ function VoiceTab({
             <label className="block text-[11px] text-white/55 mb-1">API Base URL</label>
             <input
               type="text"
+              autoComplete="off"
               value={ttsConfig.openaiBaseUrl}
               onChange={(e) => onTtsChange({ ...ttsConfig, openaiBaseUrl: e.target.value })}
               className="cyber-input-field w-full px-3 py-2 text-xs"
@@ -766,6 +771,7 @@ function VoiceTab({
             <label className="block text-[11px] text-white/55 mb-1">API Key</label>
             <input
               type="password"
+              autoComplete="off"
               value={ttsConfig.openaiApiKey}
               onChange={(e) => onTtsChange({ ...ttsConfig, openaiApiKey: e.target.value })}
               className="cyber-input-field w-full px-3 py-2 text-xs"
@@ -776,6 +782,7 @@ function VoiceTab({
             <label className="block text-[11px] text-white/55 mb-1">模型</label>
             <input
               type="text"
+              autoComplete="off"
               value={ttsConfig.openaiModel}
               onChange={(e) => onTtsChange({ ...ttsConfig, openaiModel: e.target.value })}
               className="cyber-input-field w-full px-3 py-2 text-xs"
@@ -906,6 +913,7 @@ function ApiTab({
         <label className="block cyber-label">API Base URL</label>
         <input
           type="text"
+          autoComplete="off"
           value={config.baseUrl}
           onChange={(e) => onChange({ ...config, baseUrl: e.target.value })}
           className="cyber-input-field w-full px-3 py-2 text-xs"
@@ -917,6 +925,7 @@ function ApiTab({
         <label className="block cyber-label">API Key</label>
         <input
           type="password"
+          autoComplete="off"
           value={config.apiKey}
           onChange={(e) => onChange({ ...config, apiKey: e.target.value })}
           className="cyber-input-field w-full px-3 py-2 text-xs"
@@ -928,6 +937,7 @@ function ApiTab({
         <label className="block cyber-label">模型名称</label>
         <input
           type="text"
+          autoComplete="off"
           value={config.model}
           onChange={(e) => onChange({ ...config, model: e.target.value })}
           className="cyber-input-field w-full px-3 py-2 text-xs"
