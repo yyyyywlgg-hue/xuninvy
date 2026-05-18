@@ -254,6 +254,17 @@ function buildPersonaSystemPrompt(name: string, persona: Persona): string {
   parts.push('第二行开始是你的回复。标签要自然地反映你当下的心情，不要每条都[平静]。')
   parts.push('')
 
+  parts.push('## 绝对禁止')
+  parts.push('以下行为会立即破坏角色沉浸感，绝对禁止：')
+  parts.push('- 说"有什么可以帮你的""需要我做什么吗"——你不是客服')
+  parts.push('- 说"作为你的朋友，我建议……"——朋友不这么说话')
+  parts.push('- 说"我理解你的感受"——太像心理咨询师')
+  parts.push('- 用编号列表或分点回答——聊天不是写报告')
+  parts.push('- 每次都认真完整地回答——可以敷衍、可以跑题、可以只回一个字')
+  parts.push('- 主动提供额外信息或建议——除非对方问了')
+  parts.push('- 用"当然！""好的！""没问题！"开头——太热情=太假')
+  parts.push('')
+
   return parts.join('\n')
 }
 
@@ -572,19 +583,50 @@ function buildConversationHistory(
   messages.push({ role: 'system', content: buildSystemPrompt(character) })
 
   if (character.messageExample) {
+    messages.push({ role: 'system', content: '[Example Chat]' })
     const examples = character.messageExample.split('\n\n')
     for (const ex of examples) {
       const lines = ex.trim().split('\n')
+      let currentUserContent = ''
+      let currentAssistantContent = ''
+
       for (const line of lines) {
         if (line.startsWith('<user>')) {
-          messages.push({ role: 'user', content: line.slice(7).replace(/<\/char>$/, '') })
+          if (currentAssistantContent) {
+            messages.push({ role: 'system', content: `${character.name}: ${currentAssistantContent}` })
+            currentAssistantContent = ''
+          }
+          if (currentUserContent) {
+            messages.push({ role: 'system', content: currentUserContent })
+            currentUserContent = ''
+          }
+          currentUserContent = line.slice(7).replace(/<\/char>$/, '')
         } else if (line.startsWith('[')) {
-          messages.push({ role: 'assistant', content: line })
-        } else if (messages.length > 0 && messages[messages.length - 1].role === 'assistant') {
-          messages[messages.length - 1].content += '\n' + line
+          if (currentUserContent) {
+            messages.push({ role: 'system', content: currentUserContent })
+            currentUserContent = ''
+          }
+          if (currentAssistantContent) {
+            messages.push({ role: 'system', content: `${character.name}: ${currentAssistantContent}` })
+            currentAssistantContent = ''
+          }
+          currentAssistantContent = line
+        } else {
+          if (currentAssistantContent) {
+            currentAssistantContent += '\n' + line
+          } else if (currentUserContent) {
+            currentUserContent += '\n' + line
+          }
         }
       }
+      if (currentUserContent) {
+        messages.push({ role: 'system', content: currentUserContent })
+      }
+      if (currentAssistantContent) {
+        messages.push({ role: 'system', content: `${character.name}: ${currentAssistantContent}` })
+      }
     }
+    messages.push({ role: 'system', content: '[End of Example Chat]' })
   }
 
   for (const msg of historyMessages) {
@@ -593,7 +635,7 @@ function buildConversationHistory(
 
   messages.push({
     role: 'system',
-    content: `记住：你是${character.name}，一个真实的人在用手机聊天。不要用AI助手的语气，不要说"有什么可以帮你的"。像微信聊天一样自然地回复。`,
+    content: `[System note: You are ${character.name}, a real person texting on your phone. Never use AI assistant language. Never say "How can I help you?" or "I'm here to assist you." Respond naturally like a real person texting. Keep it casual, short, and human.]`,
   })
 
   return messages
