@@ -1,6 +1,6 @@
 import { Application, Ticker } from 'pixi.js';
 import { Live2DModel } from 'pixi-live2d-display/cubism4';
-import { ParticleSystem } from './ParticleSystem';
+import { Starfield } from './Starfield';
 import { WeatherEffects } from './WeatherEffects';
 import type { Emotion } from '../types';
 import { EMOTION_CONFIGS } from '../types';
@@ -102,7 +102,7 @@ const EMOTION_EXPRESSIONS: Record<Emotion, ExpressionParams> = {
 
 export class SceneController {
   private app: Application;
-  private particles: ParticleSystem;
+  private starfield: Starfield;
   private weather: WeatherEffects;
   private currentEmotion: Emotion = 'calm';
   private model: Live2DModel | null = null;
@@ -128,7 +128,7 @@ export class SceneController {
 
   constructor(app: Application, width: number, height: number) {
     this.app = app;
-    this.particles = new ParticleSystem(app, width, height);
+    this.starfield = new Starfield(app, width, height);
     this.weather = new WeatherEffects(app, width, height);
 
     this.mousemoveHandler = (e: MouseEvent) => {
@@ -263,7 +263,7 @@ export class SceneController {
 
   setEmotion(emotion: Emotion) {
     this.currentEmotion = emotion;
-    this.particles.setEmotion(emotion);
+    this.starfield.setEmotion(emotion);
     const config = EMOTION_CONFIGS[emotion];
     this.weather.setWeather(config.weatherEffect);
 
@@ -359,7 +359,7 @@ export class SceneController {
   }
 
   update(delta: number) {
-    this.particles.update(delta);
+    this.starfield.update(delta);
     this.weather.update(delta);
 
     if (!this.modelLoaded || !this.model) return;
@@ -371,11 +371,11 @@ export class SceneController {
   }
 
   getParticleCount() {
-    return this.particles.getParticleCount();
+    return this.starfield.getParticleCount();
   }
 
   resize(width: number, height: number) {
-    this.particles.resize(width, height);
+    this.starfield.resize(width, height);
     this.weather.resize(width, height);
 
     if (this.modelLoaded && this.model) {
@@ -394,7 +394,7 @@ export class SceneController {
       window.removeEventListener('mousemove', this.mousemoveHandler);
       this.mousemoveHandler = null;
     }
-    this.particles.destroy();
+    this.starfield.destroy();
     this.weather.destroy();
     this.unloadModel();
   }
