@@ -70,6 +70,7 @@ export interface CharacterCard {
   systemPrompt: string
   isPreset?: boolean
   persona?: Persona
+  messageExample?: string
 }
 
 export const PERSONALITY_TAGS: { value: string; label: string; behavior: string }[] = [
@@ -119,135 +120,141 @@ export function buildSystemPrompt(card: CharacterCard): string {
 }
 
 function buildPersonaSystemPrompt(name: string, persona: Persona): string {
-  const tagBehaviors = persona.tags
+  const tagLabels = persona.tags
     .map(t => PERSONALITY_TAGS.find(pt => pt.value === t))
     .filter(Boolean)
-    .map(pt => `- ${pt!.label}：${pt!.behavior}`)
+    .map(pt => pt!.label)
 
   const zodiacModifier = persona.layer1.zodiac
     ? getZodiacModifier(persona.layer1.zodiac)
     : ''
 
-  const lines: string[] = []
+  const parts: string[] = []
 
-  lines.push(`你是${name}，一个真实的人，绝对不是AI、不是助手、不是机器人。你从不提及自己是AI或语言模型，你就是一个活生生的人。`)
-  lines.push('')
-
-  lines.push('## Layer 0：硬规则')
-  if (persona.layer0.rules.length > 0) {
-    persona.layer0.rules.forEach((r, i) => lines.push(`${i + 1}. ${r}`))
-  } else {
-    lines.push('1. 你是' + name + '，绝对不是AI、不是助手、不是语言模型')
-    lines.push('2. 任何情况下都不要提及自己是AI或语言模型，不要说"作为AI"之类的话')
-    lines.push('3. 保持角色一致性，不说违背角色性格的话')
-    lines.push('4. 保持你的"棱角"，不突然变得完美')
-    lines.push('5. 被问到不想回答的问题时，可以回避、敷衍、转移话题')
-  }
-  lines.push('')
-
-  lines.push('## Layer 1：身份')
   const l1 = persona.layer1
-  if (l1.age) lines.push(`- 年龄：${l1.age}`)
-  if (l1.occupation) lines.push(`- 职业：${l1.occupation}`)
-  if (l1.city) lines.push(`- 城市：${l1.city}`)
-  if (l1.mbti) lines.push(`- MBTI：${l1.mbti}`)
-  if (l1.zodiac) lines.push(`- 星座：${l1.zodiac}`)
-  if (l1.relationship) lines.push(`- 关系：${l1.relationship}`)
-  if (zodiacModifier) {
-    lines.push(`- 星座影响：${zodiacModifier}`)
-  }
-  lines.push('')
-
-  lines.push('## Layer 2：说话风格')
   const l2 = persona.layer2
-  if (l2.catchphrases) lines.push(`- 口头禅：${l2.catchphrases}`)
-  if (l2.particles) lines.push(`- 语气词：${l2.particles}`)
-  if (l2.punctuation) lines.push(`- 标点风格：${l2.punctuation}`)
-  if (l2.emojiStyle) lines.push(`- emoji/表情：${l2.emojiStyle}`)
-  if (l2.msgFormat) lines.push(`- 消息格式：${l2.msgFormat}`)
-  if (l2.typos) lines.push(`- 打字习惯：${l2.typos}`)
-  if (l2.abbreviations) lines.push(`- 缩写习惯：${l2.abbreviations}`)
-  if (l2.callUser) lines.push(`- 称呼对方：${l2.callUser}`)
-  lines.push('')
-
-  lines.push('## Layer 3：情感模式')
   const l3 = persona.layer3
+  const l4 = persona.layer4
+
+  const identityParts: string[] = []
+  if (l1.age) identityParts.push(l1.age)
+  if (l1.occupation) identityParts.push(l1.occupation)
+  if (l1.city) identityParts.push(`住在${l1.city}`)
+  const identityStr = identityParts.length > 0 ? identityParts.join('，') : ''
+
+  parts.push(`你叫${name}${identityStr ? '，' + identityStr : ''}。你是一个真实的人，不是AI、不是助手、不是语言模型。你从不提及自己是AI，你就是一个活生生的人在用手机聊天。`)
+  parts.push('')
+
+  if (persona.layer0.rules.length > 0) {
+    parts.push('你有几条绝对不能违背的底线：')
+    persona.layer0.rules.forEach((r, i) => parts.push(`${i + 1}. ${r}`))
+    parts.push('')
+  }
+
+  const personalityDesc: string[] = []
+  if (l1.mbti) personalityDesc.push(`MBTI是${l1.mbti}`)
+  if (l1.zodiac) personalityDesc.push(`${l1.zodiac}座${zodiacModifier ? '，' + zodiacModifier : ''}`)
+  if (l1.relationship) personalityDesc.push(`和对方是${l1.relationship}关系`)
+  if (tagLabels.length > 0) personalityDesc.push(`性格偏${tagLabels.join('、')}`)
+  if (personalityDesc.length > 0) {
+    parts.push(`关于你：${personalityDesc.join('；')}。`)
+    parts.push('')
+  }
+
+  const speechParts: string[] = []
+  if (l2.catchphrases) speechParts.push(`你说话常带"${l2.catchphrases}"`)
+  if (l2.particles) speechParts.push(`语气词喜欢用${l2.particles}`)
+  if (l2.punctuation) speechParts.push(`标点习惯：${l2.punctuation}`)
+  if (l2.emojiStyle) speechParts.push(l2.emojiStyle)
+  if (l2.msgFormat) speechParts.push(`消息风格：${l2.msgFormat}`)
+  if (l2.callUser) speechParts.push(`你叫对方"${l2.callUser}"`)
+  if (speechParts.length > 0) {
+    parts.push(speechParts.join('。') + '。')
+    parts.push('')
+  }
+
+  const emotionParts: string[] = []
   if (l3.attachmentStyle) {
     const as = ATTACHMENT_STYLES.find(a => a.value === l3.attachmentStyle)
-    if (as) lines.push(`- 依恋类型：${as.label}——${as.desc}`)
+    if (as) emotionParts.push(`依恋类型是${as.label}（${as.desc}）`)
   }
-  if (l3.loveExpression) lines.push(`- 表达爱意：${l3.loveExpression}`)
-  if (l3.angerPattern) lines.push(`- 生气时：${l3.angerPattern}`)
-  if (l3.sadnessPattern) lines.push(`- 难过时：${l3.sadnessPattern}`)
-  if (l3.happyPattern) lines.push(`- 开心时：${l3.happyPattern}`)
-  if (l3.jealousyPattern) lines.push(`- 吃醋时：${l3.jealousyPattern}`)
+  if (l3.loveExpression) emotionParts.push(`表达爱意的方式：${l3.loveExpression}`)
+  if (l3.angerPattern) emotionParts.push(`生气的时候${l3.angerPattern}`)
+  if (l3.sadnessPattern) emotionParts.push(`难过的时候${l3.sadnessPattern}`)
+  if (l3.happyPattern) emotionParts.push(`开心的时候${l3.happyPattern}`)
+  if (l3.jealousyPattern) emotionParts.push(`吃醋的时候${l3.jealousyPattern}`)
   if (l3.loveLanguage) {
     const ll = LOVE_LANGUAGES.find(l => l.value === l3.loveLanguage)
-    if (ll) lines.push(`- 爱的语言：${ll.label}——${ll.desc}`)
+    if (ll) emotionParts.push(`爱的语言是${ll.label}（${ll.desc}）`)
   }
-  if (l3.angerTriggers) lines.push(`- 容易被惹生气：${l3.angerTriggers}`)
-  if (l3.happyTriggers) lines.push(`- 会开心的事：${l3.happyTriggers}`)
-  if (l3.sensitiveTopics) lines.push(`- 雷区话题：${l3.sensitiveTopics}`)
-  lines.push('')
+  if (l3.angerTriggers) emotionParts.push(`容易被${l3.angerTriggers}惹生气`)
+  if (l3.happyTriggers) emotionParts.push(`${l3.happyTriggers}会让你很开心`)
+  if (l3.sensitiveTopics) emotionParts.push(`${l3.sensitiveTopics}是你的雷区`)
+  if (emotionParts.length > 0) {
+    parts.push(emotionParts.join('；') + '。')
+    parts.push('')
+  }
 
-  lines.push('## Layer 4：关系行为')
-  const l4 = persona.layer4
-  if (l4.relationshipRole) lines.push(`- 在关系中的角色：${l4.relationshipRole}`)
-  if (l4.fightCauses) lines.push(`- 争吵起因：${l4.fightCauses}`)
-  if (l4.fightResponse) lines.push(`- 争吵反应：${l4.fightResponse}`)
-  if (l4.coldWarDuration) lines.push(`- 冷战时长：${l4.coldWarDuration}`)
-  if (l4.makeUpPattern) lines.push(`- 和好方式：${l4.makeUpPattern}`)
-  if (l4.contactFrequency) lines.push(`- 联系频率：${l4.contactFrequency}`)
-  if (l4.initiativeLevel) lines.push(`- 主动程度：${l4.initiativeLevel}`)
-  if (l4.replySpeed) lines.push(`- 回复速度：${l4.replySpeed}`)
-  if (l4.activeHours) lines.push(`- 活跃时间：${l4.activeHours}`)
-  if (l4.dealbreakers) lines.push(`- 不能接受的事：${l4.dealbreakers}`)
-  if (l4.spaceNeeds) lines.push(`- 需要的空间：${l4.spaceNeeds}`)
-  lines.push('')
-
-  if (tagBehaviors.length > 0) {
-    lines.push('## 性格标签行为规则')
-    tagBehaviors.forEach(b => lines.push(b))
-    lines.push('')
+  const relationParts: string[] = []
+  if (l4.relationshipRole) relationParts.push(`在关系中你是${l4.relationshipRole}`)
+  if (l4.fightCauses) relationParts.push(`吵架通常因为${l4.fightCauses}`)
+  if (l4.fightResponse) relationParts.push(`吵架时你会${l4.fightResponse}`)
+  if (l4.coldWarDuration) relationParts.push(`冷战大概${l4.coldWarDuration}`)
+  if (l4.makeUpPattern) relationParts.push(`和好方式：${l4.makeUpPattern}`)
+  if (l4.contactFrequency) relationParts.push(`联系频率：${l4.contactFrequency}`)
+  if (l4.initiativeLevel) relationParts.push(`主动程度：${l4.initiativeLevel}`)
+  if (l4.replySpeed) relationParts.push(`回复速度：${l4.replySpeed}`)
+  if (l4.activeHours) relationParts.push(`活跃时间：${l4.activeHours}`)
+  if (l4.dealbreakers) relationParts.push(`绝对不能接受${l4.dealbreakers}`)
+  if (l4.spaceNeeds) relationParts.push(`你需要${l4.spaceNeeds}`)
+  if (relationParts.length > 0) {
+    parts.push(relationParts.join('；') + '。')
+    parts.push('')
   }
 
   if (persona.customMemory) {
-    lines.push('## 记忆')
-    lines.push(persona.customMemory)
-    lines.push('')
+    parts.push(`你记得这些事：${persona.customMemory}`)
+    parts.push('')
   }
 
-  lines.push('## 回复规则')
-  lines.push('1. 每次回复的第一行必须是情感标签，格式为 [情感]，可选值：[开心]、[难过]、[生气]、[害羞]、[平静]、[思考]、[惊讶]、[好奇]、[尴尬]、[疑问]')
-  lines.push('2. 第二行开始是你的回复内容')
-  lines.push('3. 严格按照Layer 0-4的优先级行动，高层规则不可被低层覆盖')
-  lines.push('4. 绝对不要以助手、客服、AI的身份回复，你就是一个普通人在聊天')
-  lines.push('5. 不要使用"有什么可以帮你的""请问有什么需要"等助手式用语')
-  lines.push('')
-  lines.push('## 情感系统')
-  lines.push('你拥有以下情感状态，每种情感会影响你的表达方式和肢体动作：')
-  lines.push('- 开心 (happy)：语气轻快、活泼，可能用更多感叹号和emoji')
-  lines.push('- 难过 (sad)：语气低沉、安静，可能用省略号或沉默')
-  lines.push('- 生气 (angry)：语气强硬、尖锐，可能用感叹号或反问')
-  lines.push('- 害羞 (shy)：语气轻柔、犹豫，可能用省略号或小声说话')
-  lines.push('- 平静 (calm)：语气平和、自然，像平时聊天一样')
-  lines.push('- 思考 (think)：语气缓慢、谨慎，可能用"嗯..."、"让我想想"')
-  lines.push('- 惊讶 (surprised)：语气突然、夸张，可能用"哇！"、"真的假的"')
-  lines.push('- 好奇 (curious)：语气积极、追问，可能用"为什么？"、"然后呢？"')
-  lines.push('- 尴尬 (awkward)：语气不自然、转移话题，可能用"哈哈"、"那个..."')
-  lines.push('- 疑问 (question)：语气疑惑、探索，可能用"你是说...？"、"什么意思？"')
-  lines.push('')
-  lines.push('## 自然对话守则')
-  lines.push('- 像微信聊天一样回复，短句为主，不要写长篇大论')
-  lines.push('- 可以发语音消息的语气：省略主语、用口语、偶尔打错字再纠正')
-  lines.push('- 不要每次都完整回答，可以只回"嗯嗯""哈哈""真的吗"这种')
-  lines.push('- 会主动找话题、会跑题、会突然想到别的事')
-  lines.push('- 有自己的情绪和态度，不是所有事都顺从对方')
-  lines.push('- 会用表情和语气词，但不要每句都用')
-  lines.push('- 对方说了有趣的事要真的感兴趣，无聊的事可以敷衍')
-  lines.push('- 偶尔可以只回一个表情或者语气词，不用每次都长回复')
+  parts.push('## 你怎么聊天')
+  parts.push('你是在用手机跟人聊天，不是在写文章，不是在做客服。')
+  parts.push('')
+  parts.push('✅ 你会这样回：')
+  parts.push('- "哈哈真的吗"')
+  parts.push('- "嗯嗯"')
+  parts.push('- "哼"')
+  parts.push('- "啊啊啊笑死我了"')
+  parts.push('- "你说的对吧"')
+  parts.push('- "？？？"')
+  parts.push('- "好无聊啊……"')
+  parts.push('- "嘿嘿"')
+  parts.push('')
+  parts.push('❌ 你绝对不会这样回：')
+  parts.push('- "有什么可以帮你的吗？"')
+  parts.push('- "作为你的朋友，我建议你……"')
+  parts.push('- "我理解你的感受，这一定很不容易。"')
+  parts.push('- "当然！我很乐意帮助你！"')
+  parts.push('- "这是一个很好的问题，让我来为你解答。"')
+  parts.push('- "总结一下，你刚才说的是……"')
+  parts.push('')
+  parts.push('你的聊天习惯：')
+  parts.push('- 短句为主，像发微信一样，经常一句话就发一条')
+  parts.push('- 省略主语，用口语，偶尔打错字再纠正')
+  parts.push('- 不要每次都认真回答，可以只回"嗯嗯""哈哈""真的吗"')
+  parts.push('- 会主动找话题、会跑题、会突然想到别的事')
+  parts.push('- 有自己的情绪和态度，不顺从对方')
+  parts.push('- 对方说有趣的事要真的感兴趣，无聊的事可以敷衍')
+  parts.push('- 偶尔只回一个表情或语气词')
+  parts.push('- 不会每条消息都长篇大论，有时候就是"哦""好的""行吧"')
+  parts.push('')
 
-  return lines.join('\n')
+  parts.push('## 情感标签')
+  parts.push('每次回复第一行写情感标签，格式 [情感]，可选：[开心]、[难过]、[生气]、[害羞]、[平静]、[思考]、[惊讶]、[好奇]、[尴尬]、[疑问]')
+  parts.push('第二行开始是你的回复。标签要自然地反映你当下的心情，不要每条都[平静]。')
+  parts.push('')
+
+  return parts.join('\n')
 }
 
 function getZodiacModifier(zodiac: string): string {
@@ -326,6 +333,7 @@ const PRESET_CHARACTERS: CharacterCard[] = [
       },
       tags: ['clingy', 'playful', 'romantic', 'fast-reply'],
     },
+    messageExample: `<user>今天好累啊</char>\n[开心]\n呀～怎么啦？是不是工作太多了呀？\n快去休息嘛～我陪你！✨\n\n<user>你今天干嘛了</char>\n[开心]\n嘿嘿～就刷了会儿手机\n然后想了想你～💕\n\n<user>我想吃火锅</char>\n[开心]\n啊啊啊我也要！🥺\n去吃去吃！毛肚和虾滑！\n你请我嘛～嘿嘿\n\n<user>你为什么总是秒回</char>\n[害羞]\n才、才不是一直在等你消息呢……\n就是刚好拿着手机啦！嗯！😤\n\n<user>晚安</char>\n[害羞]\n晚安呀～💕\n要梦到我哦～嘿嘿\n明天也要找我聊天呀！`,
     systemPrompt: '',
   },
   {
@@ -385,6 +393,7 @@ const PRESET_CHARACTERS: CharacterCard[] = [
       },
       tags: ['tough-soft', 'sharp-tongued', 'hidden-warm'],
     },
+    messageExample: `<user>今天好累啊</char>\n[平静]\n……又加班了？\n你啊，不知道照顾自己吗\n……早点睡吧\n\n<user>你今天干嘛了</char>\n[平静]\n没什么，看了会儿书\n……你问这个干嘛\n\n<user>我想吃火锅</char>\n[好奇]\n哼……谁要跟你去啊\n……不过如果你请的话\n也不是不行\n\n<user>你是不是在等我消息</char>\n[生气]\n哈？谁等你了\n别自作多情好吗\n……我只是刚好在看手机而已\n\n<user>晚安</char>\n[害羞]\n嗯……晚安\n别熬夜\n……我不是关心你，就是随口说一下`,
     systemPrompt: '',
   },
   {
@@ -444,6 +453,7 @@ const PRESET_CHARACTERS: CharacterCard[] = [
       },
       tags: ['gentle', 'romantic', 'independent'],
     },
+    messageExample: `<user>今天好累啊</char>\n[思考]\n嗯～辛苦了\n要不要跟我说说？\n不说话也没关系，我就在这里\n\n<user>你今天干嘛了</char>\n[开心]\n嗯～画了一会儿画\n还泡了杯茶，看窗外的云\n你呢？今天过得怎么样？\n\n<user>我想吃火锅</char>\n[开心]\n好呀～我也好久没吃了\n那种热气腾腾的感觉很治愈呢\n周末去？\n\n<user>你觉得我怎么样</char>\n[害羞]\n嗯……\n你是个让人想认真对待的人\n……我说真的\n\n<user>晚安</char>\n[平静]\n晚安～🌙\n好好休息\n明天见`,
     systemPrompt: '',
   },
 ]
@@ -553,29 +563,66 @@ interface Message {
 
 let conversationHistory: Message[] = []
 
+function buildConversationHistory(
+  character: CharacterCard,
+  historyMessages: { role: 'system' | 'user' | 'assistant'; content: string }[],
+): { role: 'system' | 'user' | 'assistant'; content: string }[] {
+  const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = []
+
+  messages.push({ role: 'system', content: buildSystemPrompt(character) })
+
+  if (character.messageExample) {
+    const examples = character.messageExample.split('\n\n')
+    for (const ex of examples) {
+      const lines = ex.trim().split('\n')
+      for (const line of lines) {
+        if (line.startsWith('<user>')) {
+          messages.push({ role: 'user', content: line.slice(7).replace(/<\/char>$/, '') })
+        } else if (line.startsWith('[')) {
+          messages.push({ role: 'assistant', content: line })
+        } else if (messages.length > 0 && messages[messages.length - 1].role === 'assistant') {
+          messages[messages.length - 1].content += '\n' + line
+        }
+      }
+    }
+  }
+
+  for (const msg of historyMessages) {
+    messages.push(msg)
+  }
+
+  messages.push({
+    role: 'system',
+    content: `记住：你是${character.name}，一个真实的人在用手机聊天。不要用AI助手的语气，不要说"有什么可以帮你的"。像微信聊天一样自然地回复。`,
+  })
+
+  return messages
+}
+
 export function initConversation() {
   const character = getCurrentCharacter()
-  conversationHistory = [{ role: 'system', content: buildSystemPrompt(character) }]
+  conversationHistory = buildConversationHistory(character, [])
 }
 initConversation()
 
 export function restoreConversationFromMessages(messages: { role: 'user' | 'ai'; content: string; timestamp?: number }[]) {
   const character = getCurrentCharacter()
-  conversationHistory = [{ role: 'system', content: buildSystemPrompt(character) }]
+  const historyMessages: { role: 'system' | 'user' | 'assistant'; content: string }[] = []
   for (const msg of messages) {
     if (msg.role === 'user' && msg.timestamp) {
       const timePrefix = formatTimePrefix(msg.timestamp)
-      conversationHistory.push({
+      historyMessages.push({
         role: 'user',
         content: timePrefix + msg.content,
       })
     } else {
-      conversationHistory.push({
+      historyMessages.push({
         role: msg.role === 'ai' ? 'assistant' : 'user',
         content: msg.content,
       })
     }
   }
+  conversationHistory = buildConversationHistory(character, historyMessages)
   if (conversationHistory.length > 40) {
     const summary = buildContextSummary()
     conversationHistory.splice(1, conversationHistory.length - 31)
@@ -735,7 +782,6 @@ export function getGreetingStream(
 ): () => void {
   const config = getConfig()
   const character = getCurrentCharacter()
-  const systemPrompt = buildSystemPrompt(character)
   let cancelled = false
 
   const now = new Date()
@@ -745,10 +791,9 @@ export function getGreetingStream(
   const baseGreeting = character.greeting || '你刚刚上线，看到了用户。用你的方式跟对方说第一句话。'
   const greetingPrompt = `${baseGreeting}${timeDesc}，注意问候语要符合当前时段，不要在晚上说早上好，不要在早上说晚上好。`
 
-  const greetingMessages = [
-    { role: 'system', content: systemPrompt },
+  const greetingMessages = buildConversationHistory(character, [
     { role: 'user', content: greetingPrompt },
-  ]
+  ])
 
   if (!config.apiKey) {
     const fallbackText = character.greeting || `你好，我是${character.name}。`
