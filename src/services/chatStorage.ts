@@ -39,9 +39,10 @@ export async function loadMessages(): Promise<ChatMessage[]> {
         if (ta && tb) return ta - tb
         return 0
       })
+      db.close()
       resolve(messages)
     }
-    request.onerror = () => reject(request.error)
+    request.onerror = () => { db.close(); reject(request.error) }
   })
 }
 
@@ -55,7 +56,7 @@ export async function saveMessage(message: ChatMessage): Promise<void> {
       pruneMessages(db)
       resolve()
     }
-    tx.onerror = () => reject(tx.error)
+    tx.onerror = () => { db.close(); reject(tx.error) }
   })
 }
 
@@ -66,6 +67,7 @@ async function pruneMessages(db: IDBDatabase): Promise<void> {
     const countReq = store.count()
     countReq.onsuccess = () => {
       if (countReq.result <= MAX_MESSAGES) {
+        db.close()
         resolve()
         return
       }
@@ -79,11 +81,11 @@ async function pruneMessages(db: IDBDatabase): Promise<void> {
         for (const msg of toDelete) {
           pruneStore.delete(msg.id)
         }
-        pruneTx.oncomplete = () => resolve()
-        pruneTx.onerror = () => resolve()
+        pruneTx.oncomplete = () => { db.close(); resolve() }
+        pruneTx.onerror = () => { db.close(); resolve() }
       }
     }
-    countReq.onerror = () => resolve()
+    countReq.onerror = () => { db.close(); resolve() }
   })
 }
 
@@ -95,8 +97,8 @@ export async function saveMessages(messages: ChatMessage[]): Promise<void> {
     for (const msg of messages) {
       store.put({ ...msg, isStreaming: false })
     }
-    tx.oncomplete = () => resolve()
-    tx.onerror = () => reject(tx.error)
+    tx.oncomplete = () => { db.close(); resolve() }
+    tx.onerror = () => { db.close(); reject(tx.error) }
   })
 }
 
@@ -106,7 +108,7 @@ export async function clearMessages(): Promise<void> {
     const tx = db.transaction(STORE_NAME, 'readwrite')
     const store = tx.objectStore(STORE_NAME)
     store.clear()
-    tx.oncomplete = () => resolve()
-    tx.onerror = () => reject(tx.error)
+    tx.oncomplete = () => { db.close(); resolve() }
+    tx.onerror = () => { db.close(); reject(tx.error) }
   })
 }

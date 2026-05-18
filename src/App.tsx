@@ -69,7 +69,7 @@ export default function App() {
     addMessage({ id: greetingId, role: 'ai', content: '', isStreaming: true, timestamp: Date.now() })
     setStreaming(true)
 
-    getGreetingStream(
+    const cancelGreeting = getGreetingStream(
       (chunk: StreamChunk) => {
         if (chunk.type === 'text_delta' && chunk.content) {
           appendStreamingText(chunk.content)
@@ -84,6 +84,8 @@ export default function App() {
       },
       () => {}
     )
+
+    return () => { cancelGreeting() }
   }, [showSettings, greetingTriggered, isStreaming, messages.length, isReady])
 
   useEffect(() => {

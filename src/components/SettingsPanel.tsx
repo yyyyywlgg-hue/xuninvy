@@ -83,7 +83,7 @@ export default function SettingsPanel({ visible, onClose, initialTab, onReset }:
     localStorage.removeItem('selected-model-id')
     localStorage.removeItem('tts-config')
     localStorage.removeItem('stt-config')
-    indexedDB.deleteDatabase('ai-spirit-realm-chat')
+    indexedDB.deleteDatabase('ai-spirit-realm')
     resetConversation()
 
     setLlmConfig(getConfig())

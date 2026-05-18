@@ -623,7 +623,7 @@ export async function streamChat(
     return
   }
 
-  conversationHistory.push({ role: 'user', content: userInput })
+  conversationHistory.push({ role: 'user', content: formatTimePrefix(Date.now()) + userInput })
 
   if (conversationHistory.length > 40) {
     const summary = buildContextSummary()
@@ -683,7 +683,7 @@ export async function streamChat(
           fullText += content
 
           if (!emotionDetected) {
-            const emotionMatch = fullText.match(/\[(开心|难过|生气|害羞|平静|思考|惊讶|好奇|尴尬)\]/)
+            const emotionMatch = fullText.match(/\[(开心|难过|生气|害羞|平静|思考|惊讶|好奇|尴尬|疑问)\]/)
             if (emotionMatch) {
               const emotion = EMOTION_MAP[emotionMatch[1]]
               if (emotion) {
@@ -832,7 +832,7 @@ export function getGreetingStream(
           fullText += content
 
           if (!emotionDetected) {
-            const emotionMatch = fullText.match(/\[(开心|难过|生气|害羞|平静|思考|惊讶|好奇|尴尬)\]/)
+            const emotionMatch = fullText.match(/\[(开心|难过|生气|害羞|平静|思考|惊讶|好奇|尴尬|疑问)\]/)
             if (emotionMatch) {
               const emotion = EMOTION_MAP[emotionMatch[1]]
               if (emotion) {

@@ -71,6 +71,7 @@ export default function PixiCanvas({ onAppReady }: Props) {
     return () => {
       window.removeEventListener('resize', handleResize);
       unsubscribeLipSync();
+      useChatStore.getState().clearEmotionTimer();
       try {
         controllerRef.current?.destroy();
         appRef.current?.destroy(true);

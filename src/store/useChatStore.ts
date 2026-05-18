@@ -32,6 +32,7 @@ interface ChatState {
   updateLastAiMessage: (text: string) => void
   setLastAiMessageDone: () => void
   setCurrentEmotion: (emotion: Emotion) => void
+  clearEmotionTimer: () => void
   setStreaming: (streaming: boolean) => void
   setStreamingText: (text: string) => void
   appendStreamingText: (char: string) => void
@@ -99,7 +100,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   clearHistory: async () => {
     await clearMessages()
-    set({ messages: [] })
+    const state = get()
+    if (state.emotionTimer) {
+      clearTimeout(state.emotionTimer)
+    }
+    set({ messages: [], emotionTimer: null, currentEmotion: 'calm', emotionHistory: [], contextSnapshots: {} })
   },
 
   addMessage: (message) =>
@@ -167,6 +172,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
       emotionHistory: newHistory,
       emotionTimer: timer,
     })
+  },
+
+  clearEmotionTimer: () => {
+    const state = get()
+    if (state.emotionTimer) {
+      clearTimeout(state.emotionTimer)
+      set({ emotionTimer: null })
+    }
   },
 
   setStreaming: (streaming) => set({ isStreaming: streaming }),
