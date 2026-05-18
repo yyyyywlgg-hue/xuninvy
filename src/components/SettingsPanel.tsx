@@ -754,6 +754,7 @@ function VoiceTab({
             <input
               type="text"
               autoComplete="off"
+              name="tts-url"
               value={ttsConfig.openaiBaseUrl}
               onChange={(e) => onTtsChange({ ...ttsConfig, openaiBaseUrl: e.target.value })}
               className="glass-input w-full px-3 py-2 text-xs"
@@ -764,7 +765,10 @@ function VoiceTab({
             <label className="label-text">API Key</label>
             <input
               type="password"
-              autoComplete="off"
+              autoComplete="new-password"
+              name="tts-key"
+              data-1p-ignore
+              data-lpignore="true"
               value={ttsConfig.openaiApiKey}
               onChange={(e) => onTtsChange({ ...ttsConfig, openaiApiKey: e.target.value })}
               className="glass-input w-full px-3 py-2 text-xs"
@@ -908,6 +912,7 @@ function ApiTab({
         <input
           type="text"
           autoComplete="off"
+          name="llm-url"
           value={config.baseUrl}
           onChange={(e) => onChange({ ...config, baseUrl: e.target.value })}
           className="glass-input w-full px-3 py-2 text-xs"
@@ -919,7 +924,10 @@ function ApiTab({
         <label className="label-text">API Key</label>
         <input
           type="password"
-          autoComplete="off"
+          autoComplete="new-password"
+          name="llm-key"
+          data-1p-ignore
+          data-lpignore="true"
           value={config.apiKey}
           onChange={(e) => onChange({ ...config, apiKey: e.target.value })}
           className="glass-input w-full px-3 py-2 text-xs"
@@ -932,6 +940,7 @@ function ApiTab({
         <input
           type="text"
           autoComplete="off"
+          name="llm-model"
           value={config.model}
           onChange={(e) => onChange({ ...config, model: e.target.value })}
           className="glass-input w-full px-3 py-2 text-xs"

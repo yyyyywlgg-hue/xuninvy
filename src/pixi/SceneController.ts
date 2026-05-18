@@ -91,6 +91,13 @@ const EMOTION_EXPRESSIONS: Record<Emotion, ExpressionParams> = {
     ParamMouthForm: -0.3,
     ParamCheek: 0.5,
   },
+  question: {
+    ParamEyeLOpen: 0.8,
+    ParamEyeROpen: 0.8,
+    ParamBrowLForm: 0.3,
+    ParamBrowRForm: 0.3,
+    ParamMouthForm: 0.2,
+  },
 };
 
 export class SceneController {
@@ -274,6 +281,7 @@ export class SceneController {
         surprised: ['Flick', 0],
         curious: ['Tap', 0],
         awkward: ['Idle', 2],
+        question: ['Idle', 1],
       };
       const [group, index] = motionMap[emotion];
       this.playMotion(group, index);

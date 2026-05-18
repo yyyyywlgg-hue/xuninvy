@@ -1,6 +1,7 @@
 import { create } from 'zustand'
-import type { ChatMessage, Emotion } from '../types'
+import type { ChatMessage, Emotion, EmotionState, ContextMessage, ContextSnapshot } from '../types'
 import type { DisplayModel } from '../types/model'
+import { EMOTION_CONFIGS } from '../types'
 import { loadModels, getSelectedModelId, setSelectedModelId, extractZipToBlobUrls, getPresetModels } from '../services/modelService'
 import { loadMessages, saveMessage, clearMessages } from '../services/chatStorage'
 import { restoreConversationFromMessages } from '../services/llmService'
@@ -15,6 +16,9 @@ interface ModelLoadRequest {
 interface ChatState {
   messages: ChatMessage[]
   currentEmotion: Emotion
+  emotionHistory: EmotionState[]
+  emotionTimer: ReturnType<typeof setTimeout> | null
+  contextSnapshots: ContextSnapshot
   isStreaming: boolean
   streamingText: string
   showSettings: boolean
@@ -41,6 +45,9 @@ interface ChatState {
   switchToModel: (id: string) => Promise<void>
   loadHistory: () => Promise<boolean>
   clearHistory: () => Promise<void>
+  ingestContextMessage: (contextId: string, text: string) => void
+  clearContextSnapshots: () => void
+  getContextsSnapshot: () => ContextSnapshot
 }
 
 async function resolveModelUrl(model: DisplayModel): Promise<{ url: string; cleanup: (() => void) | null }> {
@@ -59,6 +66,9 @@ async function resolveModelUrl(model: DisplayModel): Promise<{ url: string; clea
 export const useChatStore = create<ChatState>((set, get) => ({
   messages: [],
   currentEmotion: 'calm',
+  emotionHistory: [],
+  emotionTimer: null,
+  contextSnapshots: {},
   isStreaming: false,
   streamingText: '',
   showSettings: false,
@@ -129,7 +139,36 @@ export const useChatStore = create<ChatState>((set, get) => ({
       return { messages, isStreaming: false }
     }),
 
-  setCurrentEmotion: (emotion) => set({ currentEmotion: emotion }),
+  setCurrentEmotion: (emotion) => {
+    const state = get()
+    const config = EMOTION_CONFIGS[emotion]
+
+    if (state.emotionTimer) {
+      clearTimeout(state.emotionTimer)
+    }
+
+    const newEmotionState: EmotionState = {
+      emotion,
+      startTime: Date.now(),
+      duration: config.duration,
+    }
+
+    const newHistory = [...state.emotionHistory, newEmotionState].slice(-5)
+
+    const timer = setTimeout(() => {
+      const current = get().currentEmotion
+      if (current === emotion) {
+        set({ currentEmotion: 'calm' })
+      }
+    }, config.duration)
+
+    set({
+      currentEmotion: emotion,
+      emotionHistory: newHistory,
+      emotionTimer: timer,
+    })
+  },
+
   setStreaming: (streaming) => set({ isStreaming: streaming }),
   setStreamingText: (text) => set({ streamingText: text }),
   appendStreamingText: (char) =>
@@ -168,4 +207,25 @@ export const useChatStore = create<ChatState>((set, get) => ({
       set({ modelLoaded: false })
     }
   },
+
+  ingestContextMessage: (contextId: string, text: string) => {
+    set((state) => {
+      const existing = state.contextSnapshots[contextId] || []
+      const newMessage: ContextMessage = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        text,
+      }
+      const updated = [...existing, newMessage].slice(-10)
+      return {
+        contextSnapshots: {
+          ...state.contextSnapshots,
+          [contextId]: updated,
+        },
+      }
+    })
+  },
+
+  clearContextSnapshots: () => set({ contextSnapshots: {} }),
+
+  getContextsSnapshot: () => get().contextSnapshots,
 }))

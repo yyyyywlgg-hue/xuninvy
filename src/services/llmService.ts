@@ -1,5 +1,5 @@
 import type { Emotion, StreamChunk } from '../types';
-import { stripEmotionTag } from '../types';
+import { stripEmotionTag, formatTimePrefix } from '../types';
 
 export interface PersonaLayer0 {
   rules: string[]
@@ -218,11 +218,24 @@ function buildPersonaSystemPrompt(name: string, persona: Persona): string {
   }
 
   lines.push('## 回复规则')
-  lines.push('1. 每次回复的第一行必须是情感标签，格式为 [情感]，可选值：[开心]、[难过]、[生气]、[害羞]、[平静]、[思考]、[惊讶]、[好奇]、[尴尬]')
+  lines.push('1. 每次回复的第一行必须是情感标签，格式为 [情感]，可选值：[开心]、[难过]、[生气]、[害羞]、[平静]、[思考]、[惊讶]、[好奇]、[尴尬]、[疑问]')
   lines.push('2. 第二行开始是你的回复内容')
   lines.push('3. 严格按照Layer 0-4的优先级行动，高层规则不可被低层覆盖')
   lines.push('4. 绝对不要以助手、客服、AI的身份回复，你就是一个普通人在聊天')
   lines.push('5. 不要使用"有什么可以帮你的""请问有什么需要"等助手式用语')
+  lines.push('')
+  lines.push('## 情感系统')
+  lines.push('你拥有以下情感状态，每种情感会影响你的表达方式和肢体动作：')
+  lines.push('- 开心 (happy)：语气轻快、活泼，可能用更多感叹号和emoji')
+  lines.push('- 难过 (sad)：语气低沉、安静，可能用省略号或沉默')
+  lines.push('- 生气 (angry)：语气强硬、尖锐，可能用感叹号或反问')
+  lines.push('- 害羞 (shy)：语气轻柔、犹豫，可能用省略号或小声说话')
+  lines.push('- 平静 (calm)：语气平和、自然，像平时聊天一样')
+  lines.push('- 思考 (think)：语气缓慢、谨慎，可能用"嗯..."、"让我想想"')
+  lines.push('- 惊讶 (surprised)：语气突然、夸张，可能用"哇！"、"真的假的"')
+  lines.push('- 好奇 (curious)：语气积极、追问，可能用"为什么？"、"然后呢？"')
+  lines.push('- 尴尬 (awkward)：语气不自然、转移话题，可能用"哈哈"、"那个..."')
+  lines.push('- 疑问 (question)：语气疑惑、探索，可能用"你是说...？"、"什么意思？"')
   lines.push('')
   lines.push('## 自然对话守则')
   lines.push('- 像微信聊天一样回复，短句为主，不要写长篇大论')
@@ -445,6 +458,7 @@ const EMOTION_MAP: Record<string, Emotion> = {
   '惊讶': 'surprised',
   '好奇': 'curious',
   '尴尬': 'awkward',
+  '疑问': 'question',
 }
 
 export interface LLMConfig {
@@ -545,14 +559,22 @@ export function initConversation() {
 }
 initConversation()
 
-export function restoreConversationFromMessages(messages: { role: 'user' | 'ai'; content: string }[]) {
+export function restoreConversationFromMessages(messages: { role: 'user' | 'ai'; content: string; timestamp?: number }[]) {
   const character = getCurrentCharacter()
   conversationHistory = [{ role: 'system', content: buildSystemPrompt(character) }]
   for (const msg of messages) {
-    conversationHistory.push({
-      role: msg.role === 'ai' ? 'assistant' : 'user',
-      content: msg.content,
-    })
+    if (msg.role === 'user' && msg.timestamp) {
+      const timePrefix = formatTimePrefix(msg.timestamp)
+      conversationHistory.push({
+        role: 'user',
+        content: timePrefix + msg.content,
+      })
+    } else {
+      conversationHistory.push({
+        role: msg.role === 'ai' ? 'assistant' : 'user',
+        content: msg.content,
+      })
+    }
   }
   if (conversationHistory.length > 40) {
     const summary = buildContextSummary()
