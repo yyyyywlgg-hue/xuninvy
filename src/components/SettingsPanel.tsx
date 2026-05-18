@@ -871,7 +871,7 @@ function ApiTab({
   onApplyPreset: (preset: typeof PRESET_CONFIGS[0]) => void
   onReset?: () => void
 }) {
-  const [savedConfig] = useState(() => getConfig())
+  const savedConfig = getConfig()
   const hasConfig = savedConfig.apiKey.length > 0
   const matchedPreset = PRESET_CONFIGS.find(p => p.baseUrl === savedConfig.baseUrl && p.model === savedConfig.model)
   const [showResetConfirm, setShowResetConfirm] = useState(false)

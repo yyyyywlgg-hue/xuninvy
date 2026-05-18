@@ -76,10 +76,12 @@ export default function App() {
         if (chunk.type === 'text_delta' && chunk.content) {
           if (!aiMsgAdded) {
             aiMsgAdded = true
-            addMessage({ id: greetingId, role: 'ai', content: '', isStreaming: true, timestamp: Date.now() })
+            appendStreamingText(chunk.content)
+            addMessage({ id: greetingId, role: 'ai', content: stripEmotionTag(useChatStore.getState().streamingText), isStreaming: true, timestamp: Date.now() })
+          } else {
+            appendStreamingText(chunk.content)
+            updateLastAiMessage(stripEmotionTag(useChatStore.getState().streamingText))
           }
-          appendStreamingText(chunk.content)
-          updateLastAiMessage(stripEmotionTag(useChatStore.getState().streamingText))
         } else if (chunk.type === 'emotion' && chunk.emotion) {
           setCurrentEmotion(chunk.emotion)
         } else if (chunk.type === 'done') {
@@ -124,11 +126,13 @@ export default function App() {
         if (chunk.type === 'text_delta' && chunk.content) {
           if (!aiMsgAdded) {
             aiMsgAdded = true
-            addMessage({ id: aiMsgId, role: 'ai', content: '', isStreaming: true, timestamp: Date.now() })
+            fullText += chunk.content
+            addMessage({ id: aiMsgId, role: 'ai', content: stripEmotionTag(fullText), isStreaming: true, timestamp: Date.now() })
+          } else {
+            fullText += chunk.content
+            setStreamingText(fullText)
+            updateLastAiMessage(stripEmotionTag(fullText))
           }
-          fullText += chunk.content
-          setStreamingText(fullText)
-          updateLastAiMessage(stripEmotionTag(fullText))
         } else if (chunk.type === 'emotion' && chunk.emotion) {
           setCurrentEmotion(chunk.emotion)
         } else if (chunk.type === 'done') {
