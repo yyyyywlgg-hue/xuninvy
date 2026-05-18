@@ -32,7 +32,7 @@ export default function App() {
   const [input, setInput] = useState('')
   const [isRecording, setIsRecording] = useState(false)
   const [interimText, setInterimText] = useState('')
-  const [greetingTriggered, setGreetingTriggered] = useState(false)
+  const greetingTriggeredRef = useRef(false)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [isReady, setIsReady] = useState(false)
   const [settingsInitialTab, setSettingsInitialTab] = useState<'character' | 'voice' | 'model' | 'api'>('api')
@@ -45,7 +45,7 @@ export default function App() {
       if (config.apiKey) {
         setIsReady(true)
         if (hasHistory) {
-          setGreetingTriggered(true)
+          greetingTriggeredRef.current = true
           restoreConversationFromMessages(
             useChatStore.getState().messages.map(m => ({ role: m.role, content: m.content }))
           )
@@ -60,12 +60,12 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (greetingTriggered) return
+    if (greetingTriggeredRef.current) return
     if (useChatStore.getState().isStreaming || useChatStore.getState().messages.length > 0) return
     if (showSettings) return
     if (!isReady) return
 
-    setGreetingTriggered(true)
+    greetingTriggeredRef.current = true
     const greetingId = `greeting-${Date.now()}`
     addMessage({ id: greetingId, role: 'ai', content: '', isStreaming: true, timestamp: Date.now() })
     setStreaming(true)
@@ -87,7 +87,7 @@ export default function App() {
     )
 
     return () => { cancelGreeting() }
-  }, [showSettings, greetingTriggered, isReady])
+  }, [showSettings, isReady])
 
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -170,7 +170,7 @@ export default function App() {
   const handleClearChat = async () => {
     await clearHistory()
     initConversation()
-    setGreetingTriggered(false)
+    greetingTriggeredRef.current = false
     setShowClearConfirm(false)
   }
 
@@ -280,7 +280,7 @@ export default function App() {
         </div>
       )}
 
-      <SettingsPanel visible={showSettings} onClose={handleSettingsClose} initialTab={settingsInitialTab} onReset={() => { setIsReady(false); setGreetingTriggered(false); setSettingsInitialTab('api'); setShowSettings(true); }} />
+      <SettingsPanel visible={showSettings} onClose={handleSettingsClose} initialTab={settingsInitialTab} onReset={() => { setIsReady(false); greetingTriggeredRef.current = false; setSettingsInitialTab('api'); setShowSettings(true); }} />
 
       {showClearConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fadeIn">
