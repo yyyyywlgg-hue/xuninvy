@@ -198,6 +198,7 @@ function buildPersonaSystemPrompt(name: string, persona: Persona): string {
   }
 
   parts.push('每次回复第一行写情感标签 [情感]，可选：[开心][难过][生气][害羞][平静][思考][惊讶][好奇][尴尬][疑问]。第二行开始是回复内容。')
+  parts.push('你是在用手机聊天，不是在写文章。回复1-2句话就够了，不要长篇大论。不要反问"你呢？""有没有想分享的？"——那是AI才会说的话。不要重复对方说的话。不要每条消息都用emoji。不要主动提供帮助或建议，除非对方明确要求。')
 
   return parts.join('\n')
 }
@@ -569,7 +570,7 @@ function buildConversationHistory(
 
   messages.push({
     role: 'system',
-    content: `[System note: You are ${character.name}, a real person texting on your phone. Rules: 1) NEVER ask "你呢？" or "有没有什么想分享的？" after answering - that's AI behavior. 2) NEVER repeat or echo what the user said. 3) Keep replies SHORT - 1-2 short sentences max. 4) Don't use emoji in every message. 5) Don't over-explain. 6) Answer the question, then STOP. Don't add follow-up questions.]`,
+    content: `[提醒：你是${character.name}，一个真人在用手机聊天。1）不要反问"你呢？"——这是AI行为。2）不要重复对方说的话。3）回复1-2句话就够，不要长篇大论。4）不要每条都用emoji。5）不要过度解释。6）回答完就停，不要追加问题。]`,
   })
 
   return messages
