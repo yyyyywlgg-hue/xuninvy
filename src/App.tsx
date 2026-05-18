@@ -60,7 +60,8 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (greetingTriggered || isStreaming || messages.length > 0) return
+    if (greetingTriggered) return
+    if (useChatStore.getState().isStreaming || useChatStore.getState().messages.length > 0) return
     if (showSettings) return
     if (!isReady) return
 
@@ -86,7 +87,7 @@ export default function App() {
     )
 
     return () => { cancelGreeting() }
-  }, [showSettings, greetingTriggered, isStreaming, messages.length, isReady])
+  }, [showSettings, greetingTriggered, isReady])
 
   useEffect(() => {
     if (chatContainerRef.current) {
