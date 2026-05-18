@@ -48,6 +48,7 @@ export default function SettingsPanel({ visible, onClose, initialTab, onReset }:
 
   const [editingChar, setEditingChar] = useState<CharacterCard | null>(null)
   const [showCharEditor, setShowCharEditor] = useState(false)
+  const [apiTabKey, setApiTabKey] = useState(0)
 
   const models = useChatStore((s) => s.models)
   const selectedModelId = useChatStore((s) => s.selectedModelId)
@@ -92,6 +93,7 @@ export default function SettingsPanel({ visible, onClose, initialTab, onReset }:
     setCharacters(getCharacterCards())
     setSelectedCharId(getSelectedCharacterId())
     setActiveTab('api')
+    setApiTabKey(k => k + 1)
     onReset?.()
 
     await useChatStore.getState().clearHistory()
@@ -212,6 +214,7 @@ export default function SettingsPanel({ visible, onClose, initialTab, onReset }:
 
           {activeTab === 'api' && (
             <ApiTab
+              key={apiTabKey}
               config={llmConfig}
               onChange={setLlmConfig}
               onApplyPreset={applyPreset}

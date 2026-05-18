@@ -66,18 +66,27 @@ export default function App() {
     if (!isReady) return
 
     greetingTriggeredRef.current = true
-    const greetingId = `greeting-${Date.now()}`
-    addMessage({ id: greetingId, role: 'ai', content: '', isStreaming: true, timestamp: Date.now() })
     setStreaming(true)
+
+    let aiMsgAdded = false
+    const greetingId = `greeting-${Date.now()}`
 
     const cancelGreeting = getGreetingStream(
       (chunk: StreamChunk) => {
         if (chunk.type === 'text_delta' && chunk.content) {
+          if (!aiMsgAdded) {
+            aiMsgAdded = true
+            addMessage({ id: greetingId, role: 'ai', content: '', isStreaming: true, timestamp: Date.now() })
+          }
           appendStreamingText(chunk.content)
           updateLastAiMessage(stripEmotionTag(useChatStore.getState().streamingText))
         } else if (chunk.type === 'emotion' && chunk.emotion) {
           setCurrentEmotion(chunk.emotion)
         } else if (chunk.type === 'done') {
+          if (!aiMsgAdded) {
+            aiMsgAdded = true
+            addMessage({ id: greetingId, role: 'ai', content: '', isStreaming: false, timestamp: Date.now() })
+          }
           updateLastAiMessage(stripEmotionTag(useChatStore.getState().streamingText))
           setLastAiMessageDone()
           setStreamingText('')
@@ -102,16 +111,21 @@ export default function App() {
     setInput('')
     setInterimText('')
     addMessage({ id: `user-${Date.now()}`, role: 'user', content: msg, timestamp: Date.now() })
-    addMessage({ id: `ai-${Date.now()}`, role: 'ai', content: '', isStreaming: true, timestamp: Date.now() })
     setStreaming(true)
     setStreamingText('')
 
+    let aiMsgAdded = false
+    const aiMsgId = `ai-${Date.now()}`
     let fullText = ''
 
     await streamChat(
       msg,
       (chunk) => {
         if (chunk.type === 'text_delta' && chunk.content) {
+          if (!aiMsgAdded) {
+            aiMsgAdded = true
+            addMessage({ id: aiMsgId, role: 'ai', content: '', isStreaming: true, timestamp: Date.now() })
+          }
           fullText += chunk.content
           setStreamingText(fullText)
           updateLastAiMessage(stripEmotionTag(fullText))
@@ -125,12 +139,21 @@ export default function App() {
         }
       },
       () => {
+        if (!aiMsgAdded) {
+          aiMsgAdded = true
+          addMessage({ id: aiMsgId, role: 'ai', content: '', isStreaming: false, timestamp: Date.now() })
+        }
         updateLastAiMessage(stripEmotionTag(fullText))
         setLastAiMessageDone()
         setStreamingText('')
       },
       (err) => {
-        updateLastAiMessage(`[ERROR] ${err}`)
+        if (!aiMsgAdded) {
+          aiMsgAdded = true
+          addMessage({ id: aiMsgId, role: 'ai', content: `[ERROR] ${err}`, isStreaming: false, timestamp: Date.now() })
+        } else {
+          updateLastAiMessage(`[ERROR] ${err}`)
+        }
         setLastAiMessageDone()
         setStreamingText('')
       }
