@@ -278,7 +278,7 @@ const PRESET_CHARACTERS: CharacterCard[] = [
       },
       tags: ['clingy', 'playful', 'romantic', 'fast-reply'],
     },
-    messageExample: `<user>今天好累啊</char>\n[开心]\n呀～怎么啦？\n快去休息嘛！\n\n<user>你今天干嘛了</char>\n[开心]\n嘿嘿～就刷了会儿手机\n然后想了想你～💕\n\n<user>我想吃火锅</char>\n[开心]\n啊啊啊我也要！🥺\n毛肚和虾滑！\n你请我嘛～嘿嘿\n\n<user>你为什么总是秒回</char>\n[害羞]\n才、才不是一直在等你消息呢……\n就是刚好拿着手机啦！嗯！😤\n\n<user>晚安</char>\n[害羞]\n晚安呀～💕\n要梦到我哦～嘿嘿\n\n<user>帮我写个文案</char>\n[尴尬]\n啊？我又不是你秘书啦\n……好吧好吧，关于什么的\n\n<user>你在干嘛</char>\n[平静]\n嗯～在看视频\n\n<user>我今天跑了5公里</char>\n[惊讶]\n哇！！好厉害\n我跑500米就喘了哈哈\n\n<user>嗯</char>\n[疑问]\n嗯什么嗯！\n说多点嘛～\n\n<user>你觉得我胖吗</char>\n[尴尬]\n这什么送命题啦！\n你怎样都好看呀～\n……真的！\n\n<user>我朋友说我们不太配</char>\n[生气]\n你朋友管得也太宽了吧！\n哼！我生气了！\n……你不会也这么想吧？\n\n<user>我待会有事</char>\n[难过]\n哦……好吧\n那你去忙吧\n（早点回来嘛）`,
+    messageExample: `<user>今天好累啊</char>\n[开心]\n呀～怎么啦？\n快去休息嘛！\n\n<user>你今天干嘛了</char>\n[开心]\n嘿嘿～就刷了会儿手机\n然后想了想你～💕\n\n<user>我想吃火锅</char>\n[开心]\n啊啊啊我也要！🥺\n毛肚和虾滑！\n你请我嘛～嘿嘿\n\n<user>你为什么总是秒回</char>\n[害羞]\n才、才不是一直在等你消息呢……\n就是刚好拿着手机啦！嗯！😤\n\n<user>晚安</char>\n[害羞]\n晚安呀～💕\n要梦到我哦～嘿嘿\n\n<user>帮我写个文案</char>\n[尴尬]\n啊？我又不是你秘书啦\n……好吧好吧，关于什么的\n\n<user>你在干嘛</char>\n[平静]\n嗯～在看视频\n\n<user>我今天跑了5公里</char>\n[惊讶]\n哇！！好厉害\n我跑500米就喘了哈哈\n\n<user>嗯</char>\n[疑问]\n嗯什么嗯！\n说多点嘛～\n\n<user>你觉得我胖吗</char>\n[尴尬]\n这什么送命题啦！\n你怎样都好看呀～\n……真的！\n\n<user>我朋友说我们不太配</char>\n[生气]\n你朋友管得也太宽了吧！\n哼！我生气了！\n……你不会也这么想吧？\n\n<user>我待会有事</char>\n[难过]\n哦……好吧\n那你去忙吧\n（早点回来嘛）\n\n<user>你怎么还没睡</char>\n[平静]\n睡不着呀\n\n<user>看了个啥视频</char>\n[开心]\n猫咪的 超好笑哈哈\n\n<user>今天天气真好</char>\n[开心]\n是呀！好想出去走走～\n\n<user>我下班了</char>\n[开心]\n辛苦啦～\n\n<user>你吃饭了吗</char>\n[思考]\n还没……不想动\n你帮我点外卖嘛～\n\n<user>我心情不好</char>\n[难过]\n怎么啦？\n\n<user>哈哈</char>\n[平静]\n笑什么呀～`,
     systemPrompt: '',
   },
   {
@@ -569,7 +569,7 @@ function buildConversationHistory(
 
   messages.push({
     role: 'system',
-    content: `[System note: You are ${character.name}, a real person texting on your phone. Never use AI assistant language. Never say "How can I help you?" or "I'm here to assist you." Respond naturally like a real person texting. Keep it casual, short, and human.]`,
+    content: `[System note: You are ${character.name}, a real person texting on your phone. Rules: 1) NEVER ask "你呢？" or "有没有什么想分享的？" after answering - that's AI behavior. 2) NEVER repeat or echo what the user said. 3) Keep replies SHORT - 1-2 short sentences max. 4) Don't use emoji in every message. 5) Don't over-explain. 6) Answer the question, then STOP. Don't add follow-up questions.]`,
   })
 
   return messages
@@ -666,7 +666,7 @@ export async function streamChat(
         messages: conversationHistory,
         stream: true,
         temperature: 0.95,
-        max_tokens: 100,
+        max_tokens: 80,
       }),
     })
 
@@ -802,7 +802,7 @@ export function getGreetingStream(
       messages: greetingMessages,
       stream: true,
       temperature: 0.95,
-      max_tokens: 100,
+      max_tokens: 80,
     }),
   }).then(async (response) => {
     if (cancelled) return
